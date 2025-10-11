@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Events{% endblock %}
+
+{% block content %}
+<div id="alert-container"></div>
+
+<h1 class="mt-5">Manage Sports</h1>
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addSportModal">Add New Sport</button>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sport in sports %}
+        <tr>
+            <td>{{ sport.name }}</td>
+            <td>{{ sport.description }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr class="my-5">
+
+<h1 class="mt-5">Manage Events</h1>
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addEventModal">Add New Event</button>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Sport</th>
+            <th>Venue</th>
+            <th>Start Time</th>
+            <th>Scoring Model</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in events %}
+        <tr>
+            <td>{{ event.title }}</td>
+            <td>{{ event.sport.name }}</td>
+            <td>{{ event.venue }}</td>
+            <td>{{ event.start_time }}</td>
+            <td>{{ event.scoring_model }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add Sport Modal -->
+<div class="modal fade" id="addSportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Sport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_sport') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sport Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_event') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Event Title</label>
+                        <input type="text" class="form-control" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}">{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Venue</label>
+                        <input type="text" class="form-control" name="venue">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" name="start_time">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scoring Model</label>
+                        <select class="form-select" name="scoring_model" required>
+                            <option value="points">Points-based</option>
+                            <option value="victory">Straight Victory</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

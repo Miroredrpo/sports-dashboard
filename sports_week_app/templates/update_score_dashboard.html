@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Update Scores{% endblock %}
+
+{% block content %}
+<h1 class="mt-5">Update Scores</h1>
+<p>Select a sport to create a new competition or manage existing ones.</p>
+
+<div class="list-group mt-4">
+    {% for sport in sports %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">{{ sport.name }}</h5>
+            <p class="mb-1">{{ sport.description }}</p>
+        </div>
+        <a href="{{ url_for('setup_competition', sport_id=sport.id) }}" class="btn btn-primary">Update Score</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

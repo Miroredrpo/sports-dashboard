@@ -1,7 +1,7 @@
 -- Create the houses table
 CREATE TABLE houses (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     color VARCHAR(7) NOT NULL
 );
 
@@ -17,46 +17,52 @@ CREATE TABLE students (
 -- Create the sports table
 CREATE TABLE sports (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    date_range DATERANGE
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT
 );
 
--- Create the games table
-CREATE TABLE games (
+-- Create the events (formerly games) table
+CREATE TABLE events (
     id SERIAL PRIMARY KEY,
-    sport_id INTEGER REFERENCES sports(id),
+    sport_id INTEGER REFERENCES sports(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     start_time TIMESTAMPTZ,
     venue VARCHAR(255),
-    is_team_event BOOLEAN DEFAULT FALSE
+    scoring_model VARCHAR(50) NOT NULL CHECK (scoring_model IN ('points', 'victory'))
 );
 
--- Create the participants table
-CREATE TABLE participants (
+-- Create the competitions table for head-to-head matchups
+CREATE TABLE competitions (
     id SERIAL PRIMARY KEY,
-    game_id INTEGER REFERENCES games(id),
-    student_id INTEGER REFERENCES students(id)
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL CHECK (type IN ('group', 'individual')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create the scoring_rules table
-CREATE TABLE scoring_rules (
+-- Create a linking table for houses in a group competition
+CREATE TABLE competition_houses (
+    competition_id INTEGER REFERENCES competitions(id) ON DELETE CASCADE,
+    house_id INTEGER REFERENCES houses(id) ON DELETE CASCADE,
+    PRIMARY KEY (competition_id, house_id)
+);
+
+-- Create the competition_rounds table
+CREATE TABLE competition_rounds (
     id SERIAL PRIMARY KEY,
-    sport_id INTEGER REFERENCES sports(id),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    rule_json JSONB,
-    active_flag BOOLEAN DEFAULT TRUE
+    competition_id INTEGER REFERENCES competitions(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL,
+    winner_house_id INTEGER REFERENCES houses(id),
+    winner_student_id INTEGER REFERENCES students(id),
+    details TEXT, -- For scores like in cricket
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create the scores table
+-- Create the scores table (now simplified and linked to rounds)
 CREATE TABLE scores (
     id SERIAL PRIMARY KEY,
-    game_id INTEGER REFERENCES games(id),
-    student_id INTEGER REFERENCES students(id),
+    round_id INTEGER REFERENCES competition_rounds(id) ON DELETE CASCADE,
     house_id INTEGER REFERENCES houses(id),
     points INTEGER NOT NULL,
-    type VARCHAR(50) CHECK (type IN ('individual', 'group')),
     recorded_by UUID REFERENCES auth.users(id),
     recorded_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -73,17 +79,16 @@ CREATE TABLE audit_log (
     performed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create admins table to store admin user IDs
+-- Role tables
 CREATE TABLE admins (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id)
 );
 
--- Create teachers table to store teacher user IDs
 CREATE TABLE teachers (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id)
 );
 
--- Add indexes
-CREATE INDEX ON scores (game_id);
-CREATE INDEX ON scores (house_id);
+-- Indexes
 CREATE INDEX ON students (roll_no);
+CREATE INDEX ON scores (round_id);
+CREATE INDEX ON scores (house_id);

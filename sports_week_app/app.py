@@ -56,6 +56,18 @@ def admin_required(f):
 def index():
     return redirect(url_for('login'))
 
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        try:
+            supabase.auth.sign_up({"email": email, "password": password})
+            return redirect(url_for('login'))
+        except Exception as e:
+            return render_template("signup.html", error=str(e))
+    return render_template("signup.html")
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -228,13 +240,13 @@ def commit_import_students():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- Sports & Games Management ---
-@app.route("/admin/sports-games")
+# --- Event Management (Unified) ---
+@app.route("/admin/events")
 @admin_required
-def manage_sports_games():
+def manage_events():
     sports = supabase.table('sports').select('*').execute()
-    games = supabase.table('games').select('*, sports!inner(name)').execute()
-    return render_template("sports_games.html", sports=sports.data, games=games.data)
+    events = supabase.table('events').select('*, sport:sports!inner(name)').execute()
+    return render_template("manage_events.html", sports=sports.data, events=events.data)
 
 @app.route("/admin/sports/add", methods=["POST"])
 @admin_required
@@ -247,70 +259,103 @@ def add_sport():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/admin/sports/edit/<int:sport_id>", methods=["POST"])
+@app.route("/admin/events/add", methods=["POST"])
 @admin_required
-def edit_sport(sport_id):
-    try:
-        name = request.form.get("name")
-        description = request.form.get("description")
-        supabase.table('sports').update({"name": name, "description": description}).eq('id', sport_id).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/admin/sports/delete/<int:sport_id>", methods=["POST"])
-@admin_required
-def delete_sport(sport_id):
-    try:
-        supabase.table('sports').delete().eq('id', sport_id).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/admin/games/add", methods=["POST"])
-@admin_required
-def add_game():
+def add_event():
     try:
         title = request.form.get("title")
         sport_id = request.form.get("sport_id")
         venue = request.form.get("venue")
         start_time = request.form.get("start_time")
-        supabase.table('games').insert({
+        scoring_model = request.form.get("scoring_model")
+        supabase.table('events').insert({
             "title": title,
             "sport_id": sport_id,
             "venue": venue,
-            "start_time": start_time
+            "start_time": start_time,
+            "scoring_model": scoring_model
         }).execute()
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/admin/games/edit/<int:game_id>", methods=["POST"])
-@admin_required
-def edit_game(game_id):
-    try:
-        title = request.form.get("title")
-        sport_id = request.form.get("sport_id")
-        venue = request.form.get("venue")
-        start_time = request.form.get("start_time")
-        supabase.table('games').update({
-            "title": title,
-            "sport_id": sport_id,
-            "venue": venue,
-            "start_time": start_time
-        }).eq('id', game_id).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+# --- New Competition Workflow ---
+@app.route("/update-scores")
+@login_required
+def update_scores_dashboard():
+    sports = supabase.table('sports').select('*').execute()
+    return render_template("update_score_dashboard.html", sports=sports.data)
 
-@app.route("/admin/games/delete/<int:game_id>", methods=["POST"])
-@admin_required
-def delete_game(game_id):
-    try:
-        supabase.table('games').delete().eq('id', game_id).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+@app.route("/competitions/setup/<int:sport_id>")
+@login_required
+def setup_competition(sport_id):
+    sport = supabase.table('sports').select('*').eq('id', sport_id).single().execute().data
+    houses = supabase.table('houses').select('*').execute().data
+    return render_template("competition_setup.html", sport=sport, houses=houses.data)
+
+@app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
+@login_required
+def create_group_competition(sport_id):
+    house1_id = request.form.get("house1_id")
+    house2_id = request.form.get("house2_id")
+
+    # For simplicity, we'll create a new 'event' for each competition
+    event = supabase.table('events').insert({
+        "sport_id": sport_id,
+        "title": f"Competition for Sport ID {sport_id}",
+        "scoring_model": "victory"
+    }).execute().data[0]
+
+    competition = supabase.table('competitions').insert({
+        "event_id": event['id'],
+        "type": "group"
+    }).execute().data[0]
+
+    supabase.table('competition_houses').insert([
+        {"competition_id": competition['id'], "house_id": house1_id},
+        {"competition_id": competition['id'], "house_id": house2_id}
+    ]).execute()
+
+    return redirect(url_for('manage_competition', competition_id=competition['id']))
+
+@app.route("/competitions/manage/<int:competition_id>")
+@login_required
+def manage_competition(competition_id):
+    competition = supabase.table('competitions').select('*, events!inner(*), houses!inner(*)').eq('id', competition_id).single().execute().data
+    rounds = supabase.table('competition_rounds').select('*, winner_house:houses!left(*)').eq('competition_id', competition_id).order('round_number').execute().data
+    return render_template("manage_competition.html", competition=competition, rounds=rounds)
+
+@app.route("/competitions/rounds/add/<int:competition_id>", methods=["POST"])
+@login_required
+def add_competition_round(competition_id):
+    winner_house_id = request.form.get("winner_house_id")
+    details = request.form.get("details")
+
+    # Get the next round number
+    rounds = supabase.table('competition_rounds').select('round_number').eq('competition_id', competition_id).execute().data
+    next_round_number = len(rounds) + 1
+
+    supabase.table('competition_rounds').insert({
+        "competition_id": competition_id,
+        "round_number": next_round_number,
+        "winner_house_id": winner_house_id,
+        "details": details
+    }).execute()
+
+    return redirect(url_for('manage_competition', competition_id=competition_id))
+
+@app.route("/competitions/rounds/edit/<int:round_id>", methods=["POST"])
+@login_required
+def edit_competition_round(round_id):
+    winner_house_id = request.form.get("winner_house_id")
+    details = request.form.get("details")
+
+    round_data = supabase.table('competition_rounds').update({
+        "winner_house_id": winner_house_id,
+        "details": details
+    }).eq('id', round_id).execute().data[0]
+
+    return redirect(url_for('manage_competition', competition_id=round_data['competition_id']))
 
 # --- Scoring Rules Management ---
 @app.route("/admin/scoring-rules")
@@ -360,96 +405,6 @@ def delete_scoring_rule(rule_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --- Scoring Routes ---
-@app.route("/admin/games")
-@admin_required
-def manage_games():
-    games = supabase.table('games').select('*').execute()
-    return render_template("games.html", games=games.data)
-
-@app.route("/game/<int:game_id>/scores")
-@login_required # Teacher or Admin can view
-def manage_game_scores(game_id):
-    game = supabase.table('games').select('*').eq('id', game_id).single().execute().data
-    participants = supabase.table('participants').select('*, students!inner(full_name, houses!inner(name))').eq('game_id', game_id).execute().data
-    houses = supabase.table('houses').select('*').execute().data
-    audit_logs = supabase.table('audit_log').select('*').eq('record_id', game_id).eq('table_name', 'scores').execute().data # Simplified
-
-    return render_template("game_scores.html", game=game, participants=participants, houses=houses, audit_logs=audit_logs)
-
-@app.route("/api/scores/individual/<int:game_id>", methods=["POST"])
-@login_required # Teacher or Admin
-def submit_individual_scores(game_id):
-    # Basic permission check
-    if not (session.get('is_admin') or session.get('is_teacher')):
-        return "Unauthorized", 403
-
-    form_data = request.form
-    scores_to_insert = []
-    audit_logs_to_insert = []
-
-    i = 0
-    while f'student_id_{i}' in form_data:
-        student_id = form_data.get(f'student_id_{i}')
-        points = form_data.get(f'points_{i}')
-
-        if student_id and points:
-            # Get house_id for the student
-            student_data = supabase.table('students').select('house_id').eq('id', student_id).single().execute().data
-
-            score_entry = {
-                "game_id": game_id,
-                "student_id": int(student_id),
-                "house_id": student_data['house_id'],
-                "points": int(points),
-                "type": "individual",
-                "recorded_by": session['user']
-            }
-            scores_to_insert.append(score_entry)
-
-            audit_logs_to_insert.append({
-                "action_type": "score_inserted",
-                "table_name": "scores",
-                "record_id": game_id, # Simplified: linking to game
-                "new_value": score_entry,
-                "performed_by": session['user']
-            })
-        i += 1
-
-    if scores_to_insert:
-        supabase.table('scores').insert(scores_to_insert).execute()
-        supabase.table('audit_log').insert(audit_logs_to_insert).execute()
-
-    return redirect(url_for('manage_game_scores', game_id=game_id))
-
-@app.route("/api/scores/group/<int:game_id>", methods=["POST"])
-@login_required # Teacher or Admin
-def submit_group_scores(game_id):
-    if not (session.get('is_admin') or session.get('is_teacher')):
-        return "Unauthorized", 403
-
-    house_id = request.form.get("house_id")
-    points = request.form.get("points")
-
-    score_entry = {
-        "game_id": game_id,
-        "house_id": int(house_id),
-        "points": int(points),
-        "type": "group",
-        "recorded_by": session['user']
-    }
-    supabase.table('scores').insert(score_entry).execute()
-
-    audit_log_entry = {
-        "action_type": "score_inserted_group",
-        "table_name": "scores",
-        "record_id": game_id,
-        "new_value": score_entry,
-        "performed_by": session['user']
-    }
-    supabase.table('audit_log').insert(audit_log_entry).execute()
-
-    return redirect(url_for('manage_game_scores', game_id=game_id))
 
 # --- Data & Visualization Routes ---
 @app.route("/leaderboard")

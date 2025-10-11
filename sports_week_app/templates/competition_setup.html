@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Competition{% endblock %}
+
+{% block content %}
+<h1 class="mt-5">Setup Competition for {{ sport.name }}</h1>
+<p>Choose the type of competition you want to create.</p>
+
+<div class="row mt-4">
+    <!-- Group Competition Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Group Competition</h5>
+                <p class="card-text">Create a head-to-head competition between two houses.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#groupCompetitionModal">Create Group Competition</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Individual Competition Card (Coming Soon) -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Individual Competition</h5>
+                <p class="card-text">Setup a competition for individual participants.</p>
+                <a href="#" class="btn btn-secondary disabled">Coming Soon</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Group Competition Modal -->
+<div class="modal fade" id="groupCompetitionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Group Competition</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('create_group_competition', sport_id=sport.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="house1_id" class="form-label">Select First House</label>
+                        <select class="form-select" name="house1_id" required>
+                            {% for house in houses %}
+                            <option value="{{ house.id }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="house2_id" class="form-label">Select Second House</label>
+                        <select class="form-select" name="house2_id" required>
+                            {% for house in houses %}
+                            <option value="{{ house.id }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Competition</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
