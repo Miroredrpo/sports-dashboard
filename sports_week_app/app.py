@@ -102,8 +102,8 @@ def admin_dashboard():
 @app.route("/admin/houses")
 @admin_required
 def manage_houses():
-    houses = supabase.table('houses').select('*').execute()
-    return render_template("houses.html", houses=houses.data)
+    houses = supabase.table('houses').select('*').execute().data
+    return render_template("houses.html", houses=houses)
 
 @app.route("/admin/houses/add", methods=["POST"])
 @admin_required
@@ -167,11 +167,11 @@ def import_students_preview():
             return jsonify({"error": f"Missing required headers. Found: {headers}, Required: {required_headers}"}), 400
 
         # Fetch existing data for validation
-        houses_res = supabase.table('houses').select('id, name').execute()
-        house_map = {h['name'].lower(): h['id'] for h in houses_res.data}
+        houses_res = supabase.table('houses').select('id, name').execute().data
+        house_map = {h['name'].lower(): h['id'] for h in houses_res}
 
-        students_res = supabase.table('students').select('roll_no').execute()
-        existing_roll_nos = {s['roll_no'] for s in students_res.data if s['roll_no']}
+        students_res = supabase.table('students').select('roll_no').execute().data
+        existing_roll_nos = {s['roll_no'] for s in students_res if s['roll_no']}
 
         preview_rows = []
         for row in csv_reader:
@@ -214,8 +214,8 @@ def commit_import_students():
         return jsonify({"inserted": 0, "updated": 0, "skipped": 0, "errors": "No rows to import"}), 400
 
     try:
-        houses_res = supabase.table('houses').select('id, name').execute()
-        house_map = {h['name'].lower(): h['id'] for h in houses_res.data}
+        houses_res = supabase.table('houses').select('id, name').execute().data
+        house_map = {h['name'].lower(): h['id'] for h in houses_res}
 
         students_to_upsert = []
         for row in rows:
@@ -251,9 +251,9 @@ def commit_import_students():
 @app.route("/admin/events")
 @admin_required
 def manage_events():
-    sports = supabase.table('sports').select('*').execute()
-    events = supabase.table('events').select('*, sport:sports!inner(name)').execute()
-    return render_template("manage_events.html", sports=sports.data, events=events.data)
+    sports = supabase.table('sports').select('*').execute().data
+    events = supabase.table('events').select('*, sport:sports!inner(name)').execute().data
+    return render_template("manage_events.html", sports=sports, events=events)
 
 @app.route("/admin/sports/add", methods=["POST"])
 @admin_required
@@ -290,8 +290,8 @@ def add_event():
 @app.route("/update-scores")
 @login_required
 def update_scores_dashboard():
-    sports = supabase.table('sports').select('*').execute()
-    return render_template("update_score_dashboard.html", sports=sports.data)
+    sports = supabase.table('sports').select('*').execute().data
+    return render_template("update_score_dashboard.html", sports=sports)
 
 @app.route("/competitions/setup/<int:sport_id>")
 @login_required
@@ -299,7 +299,7 @@ def setup_competition(sport_id):
     sport = supabase.table('sports').select('*').eq('id', sport_id).single().execute().data
     houses = supabase.table('houses').select('*').execute().data
     students = supabase.table('students').select('*, houses!inner(name)').execute().data
-    return render_template("competition_setup.html", sport=sport, houses=houses.data, students=students)
+    return render_template("competition_setup.html", sport=sport, houses=houses, students=students)
 
 @app.route("/competitions/create/individual/<int:sport_id>", methods=["POST"])
 @login_required
@@ -411,20 +411,20 @@ def leaderboard():
 @app.route("/graphs")
 @login_required
 def graphs():
-    events = supabase.table('events').select('id, title').execute()
-    return render_template("graphs.html", games=events.data) # Re-using 'games' variable in template
+    events = supabase.table('events').select('id, title').execute().data
+    return render_template("graphs.html", games=events) # Re-using 'games' variable in template
 
 @app.route("/api/leaderboard")
 @login_required
 def api_leaderboard():
-    scores = supabase.table('scores').select('points, houses!inner(name, color)').execute()
+    scores = supabase.table('scores').select('points, houses!inner(name, color)').execute().data
 
     house_points = {}
     all_houses = supabase.table('houses').select('name, color').execute().data
     for house in all_houses:
         house_points[house['name']] = {'points': 0, 'color': house['color'], 'name': house['name']}
 
-    for score in scores.data:
+    for score in scores:
         if score.get('houses'):
             house_name = score['houses']['name']
             if house_name in house_points:
@@ -436,7 +436,7 @@ def api_leaderboard():
 @app.route("/api/graphs/cumulative")
 @login_required
 def api_graphs_cumulative():
-    scores = supabase.table('scores').select('recorded_at, points, houses!inner(name)').order('recorded_at', desc=False).execute()
+    scores = supabase.table('scores').select('recorded_at, points, houses!inner(name)').order('recorded_at', desc=False).execute().data
 
     series = {}
     dates = set()
@@ -448,7 +448,7 @@ def api_graphs_cumulative():
         series[house_name] = []
         house_cumulative_points[house_name] = 0
 
-    for score in scores.data:
+    for score in scores:
         if score.get('houses'):
             dates.add(score['recorded_at'].split('T')[0])
 
@@ -456,7 +456,7 @@ def api_graphs_cumulative():
 
     for date in sorted_dates:
         for house_name in house_cumulative_points:
-            points_on_date = sum(s['points'] for s in scores.data if s.get('houses') and s['recorded_at'].split('T')[0] == date and s['houses']['name'] == house_name)
+            points_on_date = sum(s['points'] for s in scores if s.get('houses') and s['recorded_at'].split('T')[0] == date and s['houses']['name'] == house_name)
             house_cumulative_points[house_name] += points_on_date
             series[house_name].append(house_cumulative_points[house_name])
 
@@ -475,10 +475,10 @@ def api_graphs_by_event():
     rounds = supabase.table('competition_rounds').select('id').in_('competition_id', competition_ids).execute().data
     round_ids = [r['id'] for r in rounds]
 
-    scores = supabase.table('scores').select('points, houses!inner(name)').in_('round_id', round_ids).execute()
+    scores = supabase.table('scores').select('points, houses!inner(name)').in_('round_id', round_ids).execute().data
 
     breakdown = {}
-    for score in scores.data:
+    for score in scores:
         if score.get('houses'):
             house_name = score['houses']['name']
             if house_name not in breakdown:
