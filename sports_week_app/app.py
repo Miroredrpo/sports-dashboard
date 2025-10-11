@@ -5,6 +5,7 @@ from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from postgrest.exceptions import APIError
 
 load_dotenv()
 
@@ -326,8 +327,16 @@ def create_individual_competition(sport_id):
 @app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
 @login_required
 def create_group_competition(sport_id):
-    house1_id = request.form.get("house1_id")
-    house2_id = request.form.get("house2_id")
+    house1_id = int(request.form.get("house1_id"))
+    house2_id = int(request.form.get("house2_id"))
+
+    if house1_id == house2_id:
+        return "Cannot create a competition between the same house", 400
+
+    # Check for existing competition
+    existing = supabase.rpc('get_competition_between_houses', {'house1_id_param': house1_id, 'house2_id_param': house2_id, 'sport_id_param': sport_id}).execute().data
+    if existing:
+        return redirect(url_for('manage_competition', competition_id=existing[0]['id']))
 
     # For simplicity, we'll create a new 'event' for each competition
     event = supabase.table('events').insert({
@@ -373,7 +382,11 @@ def manage_competition(competition_id):
 @app.route("/competitions/rounds/add/<int:competition_id>", methods=["POST"])
 @login_required
 def add_competition_round(competition_id):
-    competition = supabase.table('competitions').select('type, houses!inner(id), competition_students!inner(student_id)').eq('id', competition_id).single().execute().data
+    try:
+        competition = supabase.table('competitions').select('type, houses!inner(id), competition_students!inner(student_id)').eq('id', competition_id).single().execute().data
+    except APIError as e:
+        return "Competition not found", 404
+
     details = request.form.get("details")
 
     rounds = supabase.table('competition_rounds').select('round_number').eq('competition_id', competition_id).execute().data
