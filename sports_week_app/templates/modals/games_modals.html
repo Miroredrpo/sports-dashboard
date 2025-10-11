@@ -1,0 +1,75 @@
+<!-- Add Game Modal -->
+<div class="modal fade" id="addGameModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Game</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_game') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Game Title</label>
+                        <input type="text" class="form-control" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sport_id" class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}">{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="venue" class="form-label">Venue</label>
+                        <input type="text" class="form-control" name="venue">
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_time" class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" name="start_time">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Game Modals -->
+{% for game in games %}
+<div class="modal fade" id="editGameModal-{{ game.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Game</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_game', game_id=game.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Game Title</label>
+                        <input type="text" class="form-control" name="title" value="{{ game.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sport_id" class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}" {% if sport.id == game.sport_id %}selected{% endif %}>{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="venue" class="form-label">Venue</label>
+                        <input type="text" class="form-control" name="venue" value="{{ game.venue }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_time" class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" name="start_time" value="{{ game.start_time }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}

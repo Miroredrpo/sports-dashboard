@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+pip-selfcheck.json
+
+# Environment
+.env
+
+# Logs
+*.log
+
+# Jules scratch
+jules-scratch/
