@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<h1 class="mt-5">Leaderboard</h1>
+<div class="row">
+    <div class="col-md-8">
+        <canvas id="leaderboardChart"></canvas>
+    </div>
+    <div class="col-md-4">
+        <h3>Current Standings</h3>
+        <table class="table" id="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>House</th>
+                    <th>Points</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const response = await fetch('/api/leaderboard');
+    const data = await response.json();
+
+    const tableBody = document.querySelector('#leaderboard-table tbody');
+    tableBody.innerHTML = '';
+
+    const labels = [];
+    const points = [];
+    const colors = [];
+
+    data.forEach(house => {
+        labels.push(house.name);
+        points.push(house.points);
+        colors.push(house.color);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${house.name}</td><td>${house.points}</td>`;
+        tableBody.appendChild(tr);
+    });
+
+    const ctx = document.getElementById('leaderboardChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Points',
+                data: points,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

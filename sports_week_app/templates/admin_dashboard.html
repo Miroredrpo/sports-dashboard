@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+    <h1 class="mt-5">Admin Dashboard</h1>
+    <p>Welcome to the admin dashboard. From here you can manage all aspects of the Sports Week application.</p>
+
+    <div class="list-group mt-4">
+        <a href="{{ url_for('manage_houses') }}" class="list-group-item list-group-item-action">Manage Houses</a>
+        <a href="{{ url_for('import_students') }}" class="list-group-item list-group-item-action">Import Students</a>
+        <a href="{{ url_for('manage_sports_games') }}" class="list-group-item list-group-item-action">Manage Sports & Games</a>
+        <a href="{{ url_for('manage_scoring_rules') }}" class="list-group-item list-group-item-action">Manage Scoring Rules</a>
+    </div>
+{% endblock %}

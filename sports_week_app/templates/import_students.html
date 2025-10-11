@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Import Students{% endblock %}
+
+{% block content %}
+<h1 class="mt-5">Import Students</h1>
+<p>Upload a CSV file with the headers: <code>full_name</code>, <code>roll_no</code>, <code>house</code>, <code>email</code> (optional).</p>
+
+<form id="upload-form" class="mt-4">
+    <div class="mb-3">
+        <label for="csv-file" class="form-label">CSV File</label>
+        <input type="file" class="form-control" id="csv-file" name="csv_file" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn btn-primary">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+        Upload and Preview
+    </button>
+</form>
+
+<hr>
+
+<div id="preview-section" style="display: none;">
+    <h2>Preview Import</h2>
+    <p>Review the data below. Invalid rows are highlighted in red. You can choose to ignore them and import the valid rows.</p>
+    <table class="table table-striped">
+        <thead>
+            <tr id="preview-header"></tr>
+        </thead>
+        <tbody id="preview-body">
+        </tbody>
+    </table>
+    <button id="commit-import" class="btn btn-success">Commit Import</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('upload-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const spinner = this.querySelector('.spinner-border');
+    spinner.style.display = 'inline-block';
+
+    const formData = new FormData();
+    formData.append('csv_file', document.getElementById('csv-file').files[0]);
+
+    try {
+        const response = await fetch('/api/admin/import_students_preview', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        displayPreview(result);
+    } catch (error) {
+        console.error('Error uploading file:', error);
+    } finally {
+        spinner.style.display = 'none';
+    }
+});
+
+function displayPreview(data) {
+    const previewSection = document.getElementById('preview-section');
+    const previewHeader = document.getElementById('preview-header');
+    const previewBody = document.getElementById('preview-body');
+
+    previewHeader.innerHTML = '';
+    previewBody.innerHTML = '';
+
+    if (data.headers) {
+        data.headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            previewHeader.appendChild(th);
+        });
+        const thError = document.createElement('th');
+        thError.textContent = 'Status';
+        previewHeader.appendChild(thError);
+    }
+
+    if (data.preview_rows) {
+        data.preview_rows.forEach(row => {
+            const tr = document.createElement('tr');
+            if (!row.valid) {
+                tr.classList.add('table-danger');
+            }
+
+            data.headers.forEach(header => {
+                const td = document.createElement('td');
+                td.textContent = row.data[header];
+                tr.appendChild(td);
+            });
+
+            const tdError = document.createElement('td');
+            tdError.textContent = row.errors.join(', ') || (row.duplicate ? 'Duplicate' : 'Valid');
+            tr.appendChild(tdError);
+
+            previewBody.appendChild(tr);
+        });
+    }
+
+    previewSection.style.display = 'block';
+
+    document.getElementById('commit-import').onclick = async () => {
+        const validRows = data.preview_rows.filter(row => row.valid);
+        const response = await fetch('/api/admin/commit_import_students', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ rows: validRows.map(r => r.data) })
+        });
+        const result = await response.json();
+        alert(`Import complete! Inserted: ${result.inserted}, Updated: ${result.updated}, Skipped: ${result.skipped}`);
+        window.location.reload();
+    };
+}
+</script>
+{% endblock %}
