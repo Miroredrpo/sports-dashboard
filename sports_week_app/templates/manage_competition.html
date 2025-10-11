@@ -4,30 +4,40 @@
 
 {% block content %}
 <h1 class="mt-5">Manage Competition</h1>
-<p>
-    <strong>Event:</strong> {{ competition.events.title }} |
-    <strong>Houses:</strong> {{ competition.houses[0].name }} vs {{ competition.houses[1].name }}
-</p>
+
+{% if competition.type == 'group' %}
+    <p>
+        <strong>Event:</strong> {{ competition.events.title }} |
+        <strong>Houses:</strong> {{ competition.houses[0].name }} vs {{ competition.houses[1].name }}
+    </p>
+{% else %}
+    <p>
+        <strong>Event:</strong> {{ competition.events.title }} |
+        <strong>Type:</strong> Individual Competition
+    </p>
+{% endif %}
 
 <h3 class="mt-4">Rounds</h3>
 <table class="table table-striped">
     <thead>
         <tr>
             <th>Round</th>
-            <th>Winner</th>
+            <th>Scores / Winner</th>
             <th>Details</th>
-            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for round in rounds %}
         <tr>
             <td>{{ round.round_number }}</td>
-            <td>{{ round.winner_house.name if round.winner_house else 'N/A' }}</td>
-            <td>{{ round.details }}</td>
             <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editRoundModal-{{ round.id }}">Edit Winner</button>
+                <ul>
+                {% for score in round.scores %}
+                    <li>{{ score.houses.name if score.houses else score.students.full_name }}: {{ score.points }} points</li>
+                {% endfor %}
+                </ul>
             </td>
+            <td>{{ round.details }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -45,15 +55,23 @@
             </div>
             <div class="modal-body">
                 <form action="{{ url_for('add_competition_round', competition_id=competition.id) }}" method="POST">
+                    {% if competition.type == 'group' %}
+                        {% for house in competition.houses %}
+                        <div class="mb-3">
+                            <label class="form-label">Points for {{ house.name }}</label>
+                            <input type="number" class="form-control" name="points_{{ house.id }}" required>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        {% for student in participants %}
+                        <div class="mb-3">
+                            <label class="form-label">Points for {{ student.full_name }}</label>
+                            <input type="number" class="form-control" name="points_{{ student.id }}" required>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
                     <div class="mb-3">
-                        <label for="winner_house_id" class="form-label">Select Winner</label>
-                        <select class="form-select" name="winner_house_id" required>
-                            <option value="{{ competition.houses[0].id }}">{{ competition.houses[0].name }}</option>
-                            <option value="{{ competition.houses[1].id }}">{{ competition.houses[1].name }}</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="details" class="form-label">Details (e.g., score)</label>
+                        <label class="form-label">Details (optional)</label>
                         <textarea class="form-control" name="details"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">Save Round</button>
@@ -62,35 +80,4 @@
         </div>
     </div>
 </div>
-
-<!-- Edit Round Modals -->
-{% for round in rounds %}
-<div class="modal fade" id="editRoundModal-{{ round.id }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit Round Winner</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{{ url_for('edit_competition_round', round_id=round.id) }}" method="POST">
-                    <div class="mb-3">
-                        <label for="winner_house_id" class="form-label">Select Winner</label>
-                        <select class="form-select" name="winner_house_id" required>
-                            <option value="{{ competition.houses[0].id }}" {% if round.winner_house_id == competition.houses[0].id %}selected{% endif %}>{{ competition.houses[0].name }}</option>
-                            <option value="{{ competition.houses[1].id }}" {% if round.winner_house_id == competition.houses[1].id %}selected{% endif %}>{{ competition.houses[1].name }}</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="details" class="form-label">Details</label>
-                        <textarea class="form-control" name="details">{{ round.details }}</textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Update Round</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endfor %}
-
 {% endblock %}

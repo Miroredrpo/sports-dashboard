@@ -127,11 +127,18 @@ def edit_house(house_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/admin/houses/delete/<int:house_id>")
+@app.route("/admin/houses/delete/<int:house_id>", methods=["GET", "POST"])
 @admin_required
 def delete_house(house_id):
-    supabase.table('houses').delete().eq('id', house_id).execute()
-    return redirect(url_for('manage_houses'))
+    try:
+        supabase.table('houses').delete().eq('id', house_id).execute()
+        if request.method == 'POST':
+            return jsonify({"success": True})
+        return redirect(url_for('manage_houses'))
+    except Exception as e:
+        if request.method == 'POST':
+            return jsonify({"success": False, "error": str(e)}), 500
+        return redirect(url_for('manage_houses'))
 
 # --- Student Import Routes ---
 @app.route("/admin/students/import")
@@ -291,7 +298,30 @@ def update_scores_dashboard():
 def setup_competition(sport_id):
     sport = supabase.table('sports').select('*').eq('id', sport_id).single().execute().data
     houses = supabase.table('houses').select('*').execute().data
-    return render_template("competition_setup.html", sport=sport, houses=houses.data)
+    students = supabase.table('students').select('*, houses!inner(name)').execute().data
+    return render_template("competition_setup.html", sport=sport, houses=houses.data, students=students)
+
+@app.route("/competitions/create/individual/<int:sport_id>", methods=["POST"])
+@login_required
+def create_individual_competition(sport_id):
+    student_ids = request.form.getlist("student_ids")
+
+    event = supabase.table('events').insert({
+        "sport_id": sport_id,
+        "title": f"Individual Competition for Sport ID {sport_id}",
+        "scoring_model": "points"
+    }).execute().data[0]
+
+    competition = supabase.table('competitions').insert({
+        "event_id": event['id'],
+        "type": "individual"
+    }).execute().data[0]
+
+    supabase.table('competition_students').insert(
+        [{"competition_id": competition['id'], "student_id": sid} for sid in student_ids]
+    ).execute()
+
+    return redirect(url_for('manage_competition', competition_id=competition['id']))
 
 @app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
 @login_required
@@ -322,40 +352,55 @@ def create_group_competition(sport_id):
 @login_required
 def manage_competition(competition_id):
     competition = supabase.table('competitions').select('*, events!inner(*), houses!inner(*)').eq('id', competition_id).single().execute().data
-    rounds = supabase.table('competition_rounds').select('*, winner_house:houses!left(*)').eq('competition_id', competition_id).order('round_number').execute().data
-    return render_template("manage_competition.html", competition=competition, rounds=rounds)
+
+    rounds_res = supabase.table('competition_rounds').select('*, scores!left(*)').eq('competition_id', competition_id).order('round_number').execute().data
+
+    participants = []
+    if competition['type'] == 'individual':
+        participants = supabase.table('competition_students').select('students!inner(id, full_name)').eq('competition_id', competition_id).execute().data
+        participants = [p['students'] for p in participants]
+
+    for round_item in rounds_res:
+        round_item['scores'] = [s for s in round_item['scores']]
+        for score in round_item['scores']:
+            if score.get('house_id'):
+                score['houses'] = supabase.table('houses').select('name').eq('id', score['house_id']).single().execute().data
+            if score.get('student_id'):
+                score['students'] = supabase.table('students').select('full_name').eq('id', score['student_id']).single().execute().data
+
+    return render_template("manage_competition.html", competition=competition, rounds=rounds_res, participants=participants)
 
 @app.route("/competitions/rounds/add/<int:competition_id>", methods=["POST"])
 @login_required
 def add_competition_round(competition_id):
-    winner_house_id = request.form.get("winner_house_id")
+    competition = supabase.table('competitions').select('type, houses!inner(id), competition_students!inner(student_id)').eq('id', competition_id).single().execute().data
     details = request.form.get("details")
 
-    # Get the next round number
     rounds = supabase.table('competition_rounds').select('round_number').eq('competition_id', competition_id).execute().data
     next_round_number = len(rounds) + 1
 
-    supabase.table('competition_rounds').insert({
+    new_round = supabase.table('competition_rounds').insert({
         "competition_id": competition_id,
         "round_number": next_round_number,
-        "winner_house_id": winner_house_id,
         "details": details
-    }).execute()
+    }).execute().data[0]
+
+    scores_to_insert = []
+    if competition['type'] == 'group':
+        for house in competition['houses']:
+            points = request.form.get(f"points_{house['id']}")
+            if points:
+                scores_to_insert.append({"round_id": new_round['id'], "house_id": house['id'], "points": int(points)})
+    else: # Individual
+        for student in competition['competition_students']:
+            points = request.form.get(f"points_{student['student_id']}")
+            if points:
+                scores_to_insert.append({"round_id": new_round['id'], "student_id": student['student_id'], "points": int(points)})
+
+    if scores_to_insert:
+        supabase.table('scores').insert(scores_to_insert).execute()
 
     return redirect(url_for('manage_competition', competition_id=competition_id))
-
-@app.route("/competitions/rounds/edit/<int:round_id>", methods=["POST"])
-@login_required
-def edit_competition_round(round_id):
-    winner_house_id = request.form.get("winner_house_id")
-    details = request.form.get("details")
-
-    round_data = supabase.table('competition_rounds').update({
-        "winner_house_id": winner_house_id,
-        "details": details
-    }).eq('id', round_id).execute().data[0]
-
-    return redirect(url_for('manage_competition', competition_id=round_data['competition_id']))
 
 # --- Scoring Rules Management ---
 @app.route("/admin/scoring-rules")
@@ -415,23 +460,26 @@ def leaderboard():
 @app.route("/graphs")
 @login_required
 def graphs():
-    games = supabase.table('games').select('id, title').execute()
-    return render_template("graphs.html", games=games.data)
+    events = supabase.table('events').select('id, title').execute()
+    return render_template("graphs.html", games=events.data) # Re-using 'games' variable in template
 
 @app.route("/api/leaderboard")
 @login_required
 def api_leaderboard():
-    # More efficient query using a database function (RPC)
-    # This assumes a function `get_leaderboard` is created in Supabase
-    # For now, we will use a more efficient Python implementation
-    scores = supabase.table('scores').select('points, houses!inner(name, color)').execute()
+    # This logic now needs to be based on the new schema.
+    # We will assume 1 point per round won for now.
+    rounds = supabase.table('competition_rounds').select('winner_house_id, houses!inner(name, color)').execute()
 
     house_points = {}
-    for score in scores.data:
-        house_name = score['houses']['name']
-        if house_name not in house_points:
-            house_points[house_name] = {'points': 0, 'color': score['houses']['color'], 'name': house_name}
-        house_points[house_name]['points'] += score['points']
+    all_houses = supabase.table('houses').select('name, color').execute().data
+    for house in all_houses:
+        house_points[house['name']] = {'points': 0, 'color': house['color'], 'name': house['name']}
+
+    for round_win in rounds.data:
+        if round_win.get('houses'):
+            winner_name = round_win['houses']['name']
+            if winner_name in house_points:
+                house_points[winner_name]['points'] += 1
 
     sorted_leaderboard = sorted(house_points.values(), key=lambda x: x['points'], reverse=True)
     return jsonify(sorted_leaderboard)
@@ -439,52 +487,58 @@ def api_leaderboard():
 @app.route("/api/graphs/cumulative")
 @login_required
 def api_graphs_cumulative():
-    scores = supabase.table('scores').select('points, recorded_at, houses!inner(name)').order('recorded_at', desc=False).execute()
+    # This logic needs a complete rewrite.
+    # For now, we'll return a simplified version based on round wins over time.
+    rounds = supabase.table('competition_rounds').select('created_at, houses!inner(name)').order('created_at', desc=False).execute()
 
     series = {}
     dates = set()
     house_cumulative_points = {}
 
-    # Initialize houses and dates
     houses = supabase.table('houses').select('name').execute().data
     for house in houses:
         house_name = house['name']
         series[house_name] = []
         house_cumulative_points[house_name] = 0
 
-    # Get all unique dates
-    for score in scores.data:
-        dates.add(score['recorded_at'].split('T')[0])
+    for round_win in rounds.data:
+        if round_win.get('houses'):
+            dates.add(round_win['created_at'].split('T')[0])
 
     sorted_dates = sorted(list(dates))
 
-    # Calculate cumulative points for each date
     for date in sorted_dates:
         for house_name in house_cumulative_points:
-            points_on_date = sum(s['points'] for s in scores.data if s['recorded_at'].split('T')[0] == date and s['houses']['name'] == house_name)
-            house_cumulative_points[house_name] += points_on_date
+            wins_on_date = sum(1 for r in rounds.data if r.get('houses') and r['created_at'].split('T')[0] == date and r['houses']['name'] == house_name)
+            house_cumulative_points[house_name] += wins_on_date
             series[house_name].append(house_cumulative_points[house_name])
 
     return jsonify({"dates": sorted_dates, "series": series})
 
-@app.route("/api/graphs/by_game")
+@app.route("/api/graphs/by_event")
 @login_required
-def api_graphs_by_game():
-    game_id = request.args.get('game_id')
-    if not game_id:
-        return jsonify({"error": "game_id is required"}), 400
+def api_graphs_by_event():
+    event_id = request.args.get('event_id')
+    if not event_id:
+        return jsonify({"error": "event_id is required"}), 400
 
-    scores = supabase.table('scores').select('points, houses!inner(name)').eq('game_id', game_id).execute()
+    # Get all competitions for the event
+    competitions = supabase.table('competitions').select('id').eq('event_id', event_id).execute().data
+    competition_ids = [c['id'] for c in competitions]
+
+    # Get all round wins for those competitions
+    rounds = supabase.table('competition_rounds').select('houses!inner(name)').in_('competition_id', competition_ids).execute()
 
     breakdown = {}
-    for score in scores.data:
-        house_name = score['houses']['name']
-        if house_name not in breakdown:
-            breakdown[house_name] = 0
-        breakdown[house_name] += score['points']
+    for round_win in rounds.data:
+        if round_win.get('houses'):
+            house_name = round_win['houses']['name']
+            if house_name not in breakdown:
+                breakdown[house_name] = 0
+            breakdown[house_name] += 1
 
     response = [{"house": name, "points": pts} for name, pts in breakdown.items()]
-    return jsonify({"game_id": game_id, "breakdown": response})
+    return jsonify({"event_id": event_id, "breakdown": response})
 
 if __name__ == "__main__":
     app.run(debug=True)

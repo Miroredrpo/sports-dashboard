@@ -53,10 +53,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     let byGameChart;
 
     gameSelector.addEventListener('change', async function() {
-        const gameId = this.value;
-        if (!gameId) return;
+        const eventId = this.value;
+        if (!eventId) return;
 
-        const response = await fetch(`/api/graphs/by_game?game_id=${gameId}`);
+        const response = await fetch(`/api/graphs/by_event?event_id=${eventId}`);
         const data = await response.json();
 
         const labels = data.breakdown.map(item => item.house);

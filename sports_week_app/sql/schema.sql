@@ -46,13 +46,18 @@ CREATE TABLE competition_houses (
     PRIMARY KEY (competition_id, house_id)
 );
 
+-- Create a linking table for students in an individual competition
+CREATE TABLE competition_students (
+    competition_id INTEGER REFERENCES competitions(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+    PRIMARY KEY (competition_id, student_id)
+);
+
 -- Create the competition_rounds table
 CREATE TABLE competition_rounds (
     id SERIAL PRIMARY KEY,
     competition_id INTEGER REFERENCES competitions(id) ON DELETE CASCADE,
     round_number INTEGER NOT NULL,
-    winner_house_id INTEGER REFERENCES houses(id),
-    winner_student_id INTEGER REFERENCES students(id),
     details TEXT, -- For scores like in cricket
     created_at TIMESTAMPTZ DEFAULT NOW()
 );

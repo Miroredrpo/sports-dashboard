@@ -18,13 +18,39 @@
         </div>
     </div>
 
-    <!-- Individual Competition Card (Coming Soon) -->
+    <!-- Individual Competition Card -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Individual Competition</h5>
                 <p class="card-text">Setup a competition for individual participants.</p>
-                <a href="#" class="btn btn-secondary disabled">Coming Soon</a>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#individualCompetitionModal">Create Individual Competition</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Competition Modal -->
+<div class="modal fade" id="individualCompetitionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Individual Competition</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('create_individual_competition', sport_id=sport.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Select Participants</label>
+                        <select class="form-select" name="student_ids" multiple required size="10">
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.full_name }} ({{ student.houses.name }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Hold Ctrl/Cmd to select multiple participants.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Competition</button>
+                </form>
             </div>
         </div>
     </div>
