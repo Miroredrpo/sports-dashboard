@@ -67,6 +67,7 @@ CREATE TABLE scores (
     id SERIAL PRIMARY KEY,
     round_id INTEGER REFERENCES competition_rounds(id) ON DELETE CASCADE,
     house_id INTEGER REFERENCES houses(id),
+    student_id INTEGER REFERENCES students(id),
     points INTEGER NOT NULL,
     recorded_by UUID REFERENCES auth.users(id),
     recorded_at TIMESTAMPTZ DEFAULT NOW()

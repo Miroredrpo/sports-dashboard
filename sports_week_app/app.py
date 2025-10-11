@@ -402,55 +402,6 @@ def add_competition_round(competition_id):
 
     return redirect(url_for('manage_competition', competition_id=competition_id))
 
-# --- Scoring Rules Management ---
-@app.route("/admin/scoring-rules")
-@admin_required
-def manage_scoring_rules():
-    rules = supabase.table('scoring_rules').select('*').execute()
-    return render_template("scoring_rules.html", rules=rules.data)
-
-@app.route("/admin/scoring-rules/add", methods=["POST"])
-@admin_required
-def add_scoring_rule():
-    try:
-        name = request.form.get("name")
-        description = request.form.get("description")
-        rule_json = request.form.get("rule_json")
-        supabase.table('scoring_rules').insert({
-            "name": name,
-            "description": description,
-            "rule_json": rule_json
-        }).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/admin/scoring-rules/edit/<int:rule_id>", methods=["POST"])
-@admin_required
-def edit_scoring_rule(rule_id):
-    try:
-        name = request.form.get("name")
-        description = request.form.get("description")
-        rule_json = request.form.get("rule_json")
-        supabase.table('scoring_rules').update({
-            "name": name,
-            "description": description,
-            "rule_json": rule_json
-        }).eq('id', rule_id).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/admin/scoring-rules/delete/<int:rule_id>", methods=["POST"])
-@admin_required
-def delete_scoring_rule(rule_id):
-    try:
-        supabase.table('scoring_rules').delete().eq('id', rule_id).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
 # --- Data & Visualization Routes ---
 @app.route("/leaderboard")
 @login_required
@@ -466,20 +417,18 @@ def graphs():
 @app.route("/api/leaderboard")
 @login_required
 def api_leaderboard():
-    # This logic now needs to be based on the new schema.
-    # We will assume 1 point per round won for now.
-    rounds = supabase.table('competition_rounds').select('winner_house_id, houses!inner(name, color)').execute()
+    scores = supabase.table('scores').select('points, houses!inner(name, color)').execute()
 
     house_points = {}
     all_houses = supabase.table('houses').select('name, color').execute().data
     for house in all_houses:
         house_points[house['name']] = {'points': 0, 'color': house['color'], 'name': house['name']}
 
-    for round_win in rounds.data:
-        if round_win.get('houses'):
-            winner_name = round_win['houses']['name']
-            if winner_name in house_points:
-                house_points[winner_name]['points'] += 1
+    for score in scores.data:
+        if score.get('houses'):
+            house_name = score['houses']['name']
+            if house_name in house_points:
+                house_points[house_name]['points'] += score['points']
 
     sorted_leaderboard = sorted(house_points.values(), key=lambda x: x['points'], reverse=True)
     return jsonify(sorted_leaderboard)
@@ -487,9 +436,7 @@ def api_leaderboard():
 @app.route("/api/graphs/cumulative")
 @login_required
 def api_graphs_cumulative():
-    # This logic needs a complete rewrite.
-    # For now, we'll return a simplified version based on round wins over time.
-    rounds = supabase.table('competition_rounds').select('created_at, houses!inner(name)').order('created_at', desc=False).execute()
+    scores = supabase.table('scores').select('recorded_at, points, houses!inner(name)').order('recorded_at', desc=False).execute()
 
     series = {}
     dates = set()
@@ -501,16 +448,16 @@ def api_graphs_cumulative():
         series[house_name] = []
         house_cumulative_points[house_name] = 0
 
-    for round_win in rounds.data:
-        if round_win.get('houses'):
-            dates.add(round_win['created_at'].split('T')[0])
+    for score in scores.data:
+        if score.get('houses'):
+            dates.add(score['recorded_at'].split('T')[0])
 
     sorted_dates = sorted(list(dates))
 
     for date in sorted_dates:
         for house_name in house_cumulative_points:
-            wins_on_date = sum(1 for r in rounds.data if r.get('houses') and r['created_at'].split('T')[0] == date and r['houses']['name'] == house_name)
-            house_cumulative_points[house_name] += wins_on_date
+            points_on_date = sum(s['points'] for s in scores.data if s.get('houses') and s['recorded_at'].split('T')[0] == date and s['houses']['name'] == house_name)
+            house_cumulative_points[house_name] += points_on_date
             series[house_name].append(house_cumulative_points[house_name])
 
     return jsonify({"dates": sorted_dates, "series": series})
@@ -522,20 +469,21 @@ def api_graphs_by_event():
     if not event_id:
         return jsonify({"error": "event_id is required"}), 400
 
-    # Get all competitions for the event
     competitions = supabase.table('competitions').select('id').eq('event_id', event_id).execute().data
     competition_ids = [c['id'] for c in competitions]
 
-    # Get all round wins for those competitions
-    rounds = supabase.table('competition_rounds').select('houses!inner(name)').in_('competition_id', competition_ids).execute()
+    rounds = supabase.table('competition_rounds').select('id').in_('competition_id', competition_ids).execute().data
+    round_ids = [r['id'] for r in rounds]
+
+    scores = supabase.table('scores').select('points, houses!inner(name)').in_('round_id', round_ids).execute()
 
     breakdown = {}
-    for round_win in rounds.data:
-        if round_win.get('houses'):
-            house_name = round_win['houses']['name']
+    for score in scores.data:
+        if score.get('houses'):
+            house_name = score['houses']['name']
             if house_name not in breakdown:
                 breakdown[house_name] = 0
-            breakdown[house_name] += 1
+            breakdown[house_name] += score['points']
 
     response = [{"house": name, "points": pts} for name, pts in breakdown.items()]
     return jsonify({"event_id": event_id, "breakdown": response})
