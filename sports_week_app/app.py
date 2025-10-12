@@ -289,13 +289,13 @@ def add_event():
 
 # --- New Competition Workflow ---
 @app.route("/update-scores")
-@login_required
+@admin_required
 def update_scores_dashboard():
     sports = supabase.table('sports').select('*').execute().data
     return render_template("update_score_dashboard.html", sports=sports)
 
 @app.route("/competitions/setup/<int:sport_id>")
-@login_required
+@admin_required
 def setup_competition(sport_id):
     sport = supabase.table('sports').select('*').eq('id', sport_id).single().execute().data
     houses = supabase.table('houses').select('*').execute().data
@@ -303,7 +303,7 @@ def setup_competition(sport_id):
     return render_template("competition_setup.html", sport=sport, houses=houses, students=students)
 
 @app.route("/competitions/create/individual/<int:sport_id>", methods=["POST"])
-@login_required
+@admin_required
 def create_individual_competition(sport_id):
     student_ids = request.form.getlist("student_ids")
 
@@ -325,7 +325,7 @@ def create_individual_competition(sport_id):
     return redirect(url_for('manage_competition', competition_id=competition['id']))
 
 @app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
-@login_required
+@admin_required
 def create_group_competition(sport_id):
     house1_id = int(request.form.get("house1_id"))
     house2_id = int(request.form.get("house2_id"))
@@ -334,9 +334,13 @@ def create_group_competition(sport_id):
         return "Cannot create a competition between the same house", 400
 
     # Check for existing competition
-    existing = supabase.rpc('get_competition_between_houses', {'house1_id_param': house1_id, 'house2_id_param': house2_id, 'sport_id_param': sport_id}).execute().data
-    if existing:
-        return redirect(url_for('manage_competition', competition_id=existing[0]['id']))
+    try:
+        existing = supabase.rpc('get_competition_between_houses', {'house1_id_param': house1_id, 'house2_id_param': house2_id, 'sport_id_param': sport_id}).execute().data
+        if existing:
+            return redirect(url_for('manage_competition', competition_id=existing[0]['id']))
+    except APIError as e:
+        print(f"Could not check for existing competitions. This is expected if the DB function is not created yet. Error: {e}")
+
 
     # For simplicity, we'll create a new 'event' for each competition
     event = supabase.table('events').insert({
@@ -358,7 +362,7 @@ def create_group_competition(sport_id):
     return redirect(url_for('manage_competition', competition_id=competition['id']))
 
 @app.route("/competitions/manage/<int:competition_id>")
-@login_required
+@admin_required
 def manage_competition(competition_id):
     competition = supabase.table('competitions').select('*, events!inner(*), houses!inner(*)').eq('id', competition_id).single().execute().data
 
@@ -380,7 +384,7 @@ def manage_competition(competition_id):
     return render_template("manage_competition.html", competition=competition, rounds=rounds_res, participants=participants)
 
 @app.route("/competitions/rounds/add/<int:competition_id>", methods=["POST"])
-@login_required
+@admin_required
 def add_competition_round(competition_id):
     try:
         competition = supabase.table('competitions').select('type, houses!inner(id), competition_students!inner(student_id)').eq('id', competition_id).single().execute().data
