@@ -112,7 +112,14 @@ def add_house():
     try:
         name = request.form.get("name")
         color = request.form.get("color")
-        supabase.table('houses').insert({"name": name, "color": color}).execute()
+        new_house = supabase.table('houses').insert({"name": name, "color": color}).execute().data[0]
+        supabase.table('audit_log').insert({
+            "action_type": "add_house",
+            "table_name": "houses",
+            "record_id": new_house['id'],
+            "new_value": {"name": name, "color": color},
+            "performed_by": session['user']
+        }).execute()
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -123,7 +130,16 @@ def edit_house(house_id):
     try:
         name = request.form.get("name")
         color = request.form.get("color")
+        old_house = supabase.table('houses').select('*').eq('id', house_id).single().execute().data
         supabase.table('houses').update({"name": name, "color": color}).eq('id', house_id).execute()
+        supabase.table('audit_log').insert({
+            "action_type": "edit_house",
+            "table_name": "houses",
+            "record_id": house_id,
+            "old_value": old_house,
+            "new_value": {"name": name, "color": color},
+            "performed_by": session['user']
+        }).execute()
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -276,12 +292,19 @@ def add_event():
         venue = request.form.get("venue")
         start_time = request.form.get("start_time")
         scoring_model = request.form.get("scoring_model")
-        supabase.table('events').insert({
+        new_event = supabase.table('events').insert({
             "title": title,
             "sport_id": sport_id,
             "venue": venue,
             "start_time": start_time,
             "scoring_model": scoring_model
+        }).execute().data[0]
+        supabase.table('audit_log').insert({
+            "action_type": "add_event",
+            "table_name": "events",
+            "record_id": new_event['id'],
+            "new_value": {"title": title, "sport_id": sport_id, "scoring_model": scoring_model},
+            "performed_by": session['user']
         }).execute()
         return jsonify({"success": True})
     except Exception as e:
@@ -322,6 +345,14 @@ def create_individual_competition(sport_id):
         [{"competition_id": competition['id'], "student_id": sid} for sid in student_ids]
     ).execute()
 
+    supabase.table('audit_log').insert({
+        "action_type": "create_competition",
+        "table_name": "competitions",
+        "record_id": competition['id'],
+        "new_value": {"type": "individual", "event_id": event['id'], "participants": student_ids},
+        "performed_by": session['user']
+    }).execute()
+
     return redirect(url_for('manage_competition', competition_id=competition['id']))
 
 @app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
@@ -359,22 +390,36 @@ def create_group_competition(sport_id):
         {"competition_id": competition['id'], "house_id": house2_id}
     ]).execute()
 
+    supabase.table('audit_log').insert({
+        "action_type": "create_competition",
+        "table_name": "competitions",
+        "record_id": competition['id'],
+        "new_value": {"type": "group", "event_id": event['id'], "houses": [house1_id, house2_id]},
+        "performed_by": session['user']
+    }).execute()
+
     return redirect(url_for('manage_competition', competition_id=competition['id']))
 
 @app.route("/competitions/manage/<int:competition_id>")
 @admin_required
 def manage_competition(competition_id):
-    competition = supabase.table('competitions').select('*, events!inner(*), houses!inner(*)').eq('id', competition_id).single().execute().data
+    try:
+        competition = supabase.table('competitions').select('*, events!inner(*)').eq('id', competition_id).single().execute().data
+    except APIError:
+        return "Competition not found", 404
+
+    participants = []
+    if competition['type'] == 'group':
+        group_participants = supabase.table('competition_houses').select('houses!inner(id, name)').eq('competition_id', competition_id).execute().data
+        participants = [p['houses'] for p in group_participants]
+        competition['houses'] = participants # For display
+    elif competition['type'] == 'individual':
+        individual_participants = supabase.table('competition_students').select('students!inner(id, full_name)').eq('competition_id', competition_id).execute().data
+        participants = [p['students'] for p in individual_participants]
 
     rounds_res = supabase.table('competition_rounds').select('*, scores!left(*)').eq('competition_id', competition_id).order('round_number').execute().data
 
-    participants = []
-    if competition['type'] == 'individual':
-        participants = supabase.table('competition_students').select('students!inner(id, full_name)').eq('competition_id', competition_id).execute().data
-        participants = [p['students'] for p in participants]
-
     for round_item in rounds_res:
-        round_item['scores'] = [s for s in round_item['scores']]
         for score in round_item['scores']:
             if score.get('house_id'):
                 score['houses'] = supabase.table('houses').select('name').eq('id', score['house_id']).single().execute().data
@@ -387,8 +432,8 @@ def manage_competition(competition_id):
 @admin_required
 def add_competition_round(competition_id):
     try:
-        competition = supabase.table('competitions').select('type, houses!inner(id), competition_students!inner(student_id)').eq('id', competition_id).single().execute().data
-    except APIError as e:
+        competition = supabase.table('competitions').select('type').eq('id', competition_id).single().execute().data
+    except APIError:
         return "Competition not found", 404
 
     details = request.form.get("details")
@@ -404,18 +449,28 @@ def add_competition_round(competition_id):
 
     scores_to_insert = []
     if competition['type'] == 'group':
-        for house in competition['houses']:
-            points = request.form.get(f"points_{house['id']}")
+        houses = supabase.table('competition_houses').select('house_id').eq('competition_id', competition_id).execute().data
+        for house in houses:
+            points = request.form.get(f"points_{house['house_id']}")
             if points:
-                scores_to_insert.append({"round_id": new_round['id'], "house_id": house['id'], "points": int(points)})
+                scores_to_insert.append({"round_id": new_round['id'], "house_id": house['house_id'], "points": int(points)})
     else: # Individual
-        for student in competition['competition_students']:
+        students = supabase.table('competition_students').select('student_id').eq('competition_id', competition_id).execute().data
+        for student in students:
             points = request.form.get(f"points_{student['student_id']}")
             if points:
                 scores_to_insert.append({"round_id": new_round['id'], "student_id": student['student_id'], "points": int(points)})
 
     if scores_to_insert:
         supabase.table('scores').insert(scores_to_insert).execute()
+
+    supabase.table('audit_log').insert({
+        "action_type": "add_round",
+        "table_name": "competition_rounds",
+        "record_id": new_round['id'],
+        "new_value": {"competition_id": competition_id, "round": next_round_number, "scores": scores_to_insert},
+        "performed_by": session['user']
+    }).execute()
 
     return redirect(url_for('manage_competition', competition_id=competition_id))
 

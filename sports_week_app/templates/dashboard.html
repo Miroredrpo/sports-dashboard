@@ -7,7 +7,9 @@
     <p>Welcome to the Sports Week application! View the current standings and data visualizations from the links below.</p>
 
     <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
+        {% if session['is_admin'] %}
         <a href="{{ url_for('update_scores_dashboard') }}" class="btn btn-success btn-lg px-4 me-md-2">Update Scores</a>
+        {% endif %}
         <a href="{{ url_for('leaderboard') }}" class="btn btn-primary btn-lg px-4 me-md-2">View Leaderboard</a>
         <a href="{{ url_for('graphs') }}" class="btn btn-outline-secondary btn-lg px-4">View Graphs</a>
     </div>

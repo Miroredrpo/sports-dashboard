@@ -22,7 +22,7 @@
     <thead>
         <tr>
             <th>Round</th>
-            <th>Scores / Winner</th>
+            <th>Scores</th>
             <th>Details</th>
         </tr>
     </thead>
@@ -31,9 +31,12 @@
         <tr>
             <td>{{ round.round_number }}</td>
             <td>
-                <ul>
+                <ul class="list-unstyled">
                 {% for score in round.scores %}
-                    <li>{{ score.houses.name if score.houses else score.students.full_name }}: {{ score.points }} points</li>
+                    <li>
+                        <strong>{{ score.houses.name if score.houses else score.students.full_name }}:</strong>
+                        {{ score.points }} points
+                    </li>
                 {% endfor %}
                 </ul>
             </td>
@@ -55,21 +58,12 @@
             </div>
             <div class="modal-body">
                 <form action="{{ url_for('add_competition_round', competition_id=competition.id) }}" method="POST">
-                    {% if competition.type == 'group' %}
-                        {% for house in competition.houses %}
-                        <div class="mb-3">
-                            <label class="form-label">Points for {{ house.name }}</label>
-                            <input type="number" class="form-control" name="points_{{ house.id }}" required>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        {% for student in participants %}
-                        <div class="mb-3">
-                            <label class="form-label">Points for {{ student.full_name }}</label>
-                            <input type="number" class="form-control" name="points_{{ student.id }}" required>
-                        </div>
-                        {% endfor %}
-                    {% endif %}
+                    {% for p in participants %}
+                    <div class="mb-3">
+                        <label class="form-label">Points for {{ p.name if p.name else p.full_name }}</label>
+                        <input type="number" class="form-control" name="points_{{ p.id }}" required>
+                    </div>
+                    {% endfor %}
                     <div class="mb-3">
                         <label class="form-label">Details (optional)</label>
                         <textarea class="form-control" name="details"></textarea>
