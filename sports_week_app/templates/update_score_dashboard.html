@@ -13,7 +13,7 @@
             <h5 class="mb-1">{{ sport.name }}</h5>
             <p class="mb-1">{{ sport.description }}</p>
         </div>
-        <a href="{{ url_for('setup_competition', sport_id=sport.id) }}" class="btn btn-primary">Update Score</a>
+        <a href="{{ url_for('list_competitions', sport_id=sport.id) }}" class="btn btn-primary">Manage Competitions</a>
     </div>
     {% endfor %}
 </div>

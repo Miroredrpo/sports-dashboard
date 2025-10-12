@@ -283,6 +283,15 @@ def add_sport():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/admin/sports/delete/<int:sport_id>", methods=["POST"])
+@admin_required
+def delete_sport(sport_id):
+    try:
+        supabase.table('sports').delete().eq('id', sport_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/admin/events/add", methods=["POST"])
 @admin_required
 def add_event():
@@ -310,12 +319,28 @@ def add_event():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/admin/events/delete/<int:event_id>", methods=["POST"])
+@admin_required
+def delete_event(event_id):
+    try:
+        supabase.table('events').delete().eq('id', event_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # --- New Competition Workflow ---
 @app.route("/update-scores")
 @admin_required
 def update_scores_dashboard():
     sports = supabase.table('sports').select('*').execute().data
     return render_template("update_score_dashboard.html", sports=sports)
+
+@app.route("/competitions/list/<int:sport_id>")
+@admin_required
+def list_competitions(sport_id):
+    sport = supabase.table('sports').select('*').eq('id', sport_id).single().execute().data
+    competitions = supabase.table('competitions').select('*, events!inner(*)').eq('events.sport_id', sport_id).execute().data
+    return render_template("list_competitions.html", sport=sport, competitions=competitions)
 
 @app.route("/competitions/setup/<int:sport_id>")
 @admin_required
@@ -329,10 +354,11 @@ def setup_competition(sport_id):
 @admin_required
 def create_individual_competition(sport_id):
     student_ids = request.form.getlist("student_ids")
+    sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
 
     event = supabase.table('events').insert({
         "sport_id": sport_id,
-        "title": f"Individual Competition for Sport ID {sport_id}",
+        "title": f"Individual Competition for {sport['name']}",
         "scoring_model": "points"
     }).execute().data[0]
 
@@ -372,11 +398,14 @@ def create_group_competition(sport_id):
     except APIError as e:
         print(f"Could not check for existing competitions. This is expected if the DB function is not created yet. Error: {e}")
 
+    sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
+    houses = supabase.table('houses').select('id, name').in_('id', [house1_id, house2_id]).execute().data
+    house_names = {h['id']: h['name'] for h in houses}
 
     # For simplicity, we'll create a new 'event' for each competition
     event = supabase.table('events').insert({
         "sport_id": sport_id,
-        "title": f"Competition for Sport ID {sport_id}",
+        "title": f"{sport['name']}: {house_names[house1_id]} vs {house_names[house2_id]}",
         "scoring_model": "victory"
     }).execute().data[0]
 
@@ -469,6 +498,52 @@ def add_competition_round(competition_id):
         "table_name": "competition_rounds",
         "record_id": new_round['id'],
         "new_value": {"competition_id": competition_id, "round": next_round_number, "scores": scores_to_insert},
+        "performed_by": session['user']
+    }).execute()
+
+    return redirect(url_for('manage_competition', competition_id=competition_id))
+
+@app.route("/competitions/rounds/edit/<int:round_id>", methods=["POST"])
+@admin_required
+def edit_competition_round(round_id):
+    details = request.form.get("details")
+
+    # Update round details
+    supabase.table('competition_rounds').update({"details": details}).eq('id', round_id).execute()
+
+    # Update scores
+    scores = supabase.table('scores').select('id').eq('round_id', round_id).execute().data
+    for score in scores:
+        points = request.form.get(f"points_{score['id']}")
+        if points:
+            supabase.table('scores').update({"points": int(points)}).eq('id', score['id']).execute()
+
+    # Audit log
+    supabase.table('audit_log').insert({
+        "action_type": "edit_round",
+        "table_name": "competition_rounds",
+        "record_id": round_id,
+        "new_value": {"details": details, "updated_scores": True}, # Simplified
+        "performed_by": session['user']
+    }).execute()
+
+    competition_id = supabase.table('competition_rounds').select('competition_id').eq('id', round_id).single().execute().data['competition_id']
+    return redirect(url_for('manage_competition', competition_id=competition_id))
+
+@app.route("/competitions/rounds/delete/<int:round_id>", methods=["POST"])
+@admin_required
+def delete_competition_round(round_id):
+    competition_id = supabase.table('competition_rounds').select('competition_id').eq('id', round_id).single().execute().data['competition_id']
+
+    # Deleting a round will cascade and delete associated scores due to DB constraints
+    supabase.table('competition_rounds').delete().eq('id', round_id).execute()
+
+    # Audit log
+    supabase.table('audit_log').insert({
+        "action_type": "delete_round",
+        "table_name": "competition_rounds",
+        "record_id": round_id,
+        "old_value": {"round_id": round_id},
         "performed_by": session['user']
     }).execute()
 

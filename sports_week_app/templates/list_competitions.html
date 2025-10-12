@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Competitions for {{ sport.name }}{% endblock %}
+
+{% block content %}
+<h1 class="mt-5">Manage Competitions for {{ sport.name }}</h1>
+<p>Select a competition to manage its rounds and scores, or create a new one.</p>
+
+<a href="{{ url_for('setup_competition', sport_id=sport.id) }}" class="btn btn-primary my-3">Create New Competition</a>
+
+<h3 class="mt-4">Existing Competitions</h3>
+<div class="list-group">
+    {% for comp in competitions %}
+    <a href="{{ url_for('manage_competition', competition_id=comp.id) }}" class="list-group-item list-group-item-action">
+        {{ comp.events.title }} ({{ comp.type }}) - Created at {{ comp.created_at }}
+    </a>
+    {% endfor %}
+</div>
+
+{% endblock %}

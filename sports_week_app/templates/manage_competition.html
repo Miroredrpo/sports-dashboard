@@ -3,6 +3,7 @@
 {% block title %}Manage Competition{% endblock %}
 
 {% block content %}
+<div id="alert-container"></div>
 <h1 class="mt-5">Manage Competition</h1>
 
 {% if competition.type == 'group' %}
@@ -24,11 +25,12 @@
             <th>Round</th>
             <th>Scores</th>
             <th>Details</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for round in rounds %}
-        <tr>
+        <tr id="round-row-{{ round.id }}">
             <td>{{ round.round_number }}</td>
             <td>
                 <ul class="list-unstyled">
@@ -41,6 +43,10 @@
                 </ul>
             </td>
             <td>{{ round.details }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editRoundModal-{{ round.id }}">Edit</button>
+                <a href="{{ url_for('delete_competition_round', round_id=round.id) }}" class="btn btn-sm btn-danger delete-round-btn">Delete</a>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -74,4 +80,72 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Round Modals -->
+{% for round in rounds %}
+<div class="modal fade" id="editRoundModal-{{ round.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Round {{ round.round_number }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_competition_round', round_id=round.id) }}" method="POST">
+                    {% for score in round.scores %}
+                    <div class="mb-3">
+                        <label class="form-label">Points for {{ score.houses.name if score.houses else score.students.full_name }}</label>
+                        <input type="number" class="form-control" name="points_{{ score.id }}" value="{{ score.points }}" required>
+                    </div>
+                    {% endfor %}
+                    <div class="mb-3">
+                        <label class="form-label">Details (optional)</label>
+                        <textarea class="form-control" name="details">{{ round.details }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Round</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Generic AJAX form submission and delete handling
+// This can be refactored into a static JS file later
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('An error occurred.');
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-round-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to delete this round?')) {
+                const response = await fetch(e.target.href, { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('An error occurred during deletion.');
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
