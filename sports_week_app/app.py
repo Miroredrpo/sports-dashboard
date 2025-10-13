@@ -283,6 +283,17 @@ def add_sport():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/admin/sports/edit/<int:sport_id>", methods=["POST"])
+@admin_required
+def edit_sport(sport_id):
+    try:
+        name = request.form.get("name")
+        description = request.form.get("description")
+        supabase.table('sports').update({"name": name, "description": description}).eq('id', sport_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/admin/sports/delete/<int:sport_id>", methods=["POST"])
 @admin_required
 def delete_sport(sport_id):
@@ -315,6 +326,26 @@ def add_event():
             "new_value": {"title": title, "sport_id": sport_id, "scoring_model": scoring_model},
             "performed_by": session['user']
         }).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/admin/events/edit/<int:event_id>", methods=["POST"])
+@admin_required
+def edit_event(event_id):
+    try:
+        title = request.form.get("title")
+        sport_id = request.form.get("sport_id")
+        venue = request.form.get("venue")
+        start_time = request.form.get("start_time")
+        scoring_model = request.form.get("scoring_model")
+        supabase.table('events').update({
+            "title": title,
+            "sport_id": sport_id,
+            "venue": venue,
+            "start_time": start_time,
+            "scoring_model": scoring_model
+        }).eq('id', event_id).execute()
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -553,27 +584,43 @@ def delete_competition_round(round_id):
 @app.route("/leaderboard")
 @login_required
 def leaderboard():
-    return render_template("leaderboard.html")
+    sports = supabase.table('sports').select('id, name').execute().data
+    return render_template("leaderboard.html", sports=sports)
 
 @app.route("/graphs")
 @login_required
 def graphs():
-    events = supabase.table('events').select('id, title').execute().data
+    events = supabase.table('events').select('id, title, sport:sports!inner(description)').execute().data
     return render_template("graphs.html", games=events) # Re-using 'games' variable in template
 
 @app.route("/api/leaderboard")
 @login_required
 def api_leaderboard():
-    scores = supabase.table('scores').select('points, houses!inner(name, color)').execute().data
+    sport_id = request.args.get('sport_id', 'all')
 
-    house_points = {}
-    all_houses = supabase.table('houses').select('name, color').execute().data
-    for house in all_houses:
-        house_points[house['name']] = {'points': 0, 'color': house['color'], 'name': house['name']}
+    # Base query for all scores, joining through to sport_id for filtering
+    query = supabase.table('scores').select('points, house_id, student_id, competition_rounds!inner(competitions!inner(events!inner(sport_id)))')
+
+    if sport_id != 'all':
+        query = query.eq('competition_rounds.competitions.events.sport_id', sport_id)
+
+    scores = query.execute().data
+
+    # Pre-fetch all houses and students to avoid N+1 queries
+    all_houses = {h['id']: h for h in supabase.table('houses').select('id, name, color').execute().data}
+    all_students = {s['id']: s for s in supabase.table('students').select('id, house_id').execute().data}
+
+    house_points = {h['name']: {'points': 0, 'color': h['color'], 'name': h['name']} for h in all_houses.values()}
 
     for score in scores:
-        if score.get('houses'):
-            house_name = score['houses']['name']
+        house_id = None
+        if score['house_id']:
+            house_id = score['house_id']
+        elif score['student_id'] and score['student_id'] in all_students:
+            house_id = all_students[score['student_id']]['house_id']
+
+        if house_id and house_id in all_houses:
+            house_name = all_houses[house_id]['name']
             if house_name in house_points:
                 house_points[house_name]['points'] += score['points']
 

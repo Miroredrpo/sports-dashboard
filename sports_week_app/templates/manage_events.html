@@ -22,6 +22,7 @@
             <td>{{ sport.name }}</td>
             <td>{{ sport.description }}</td>
             <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSportModal-{{ sport.id }}">Edit</button>
                 <a href="{{ url_for('delete_sport', sport_id=sport.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
             </td>
         </tr>
@@ -54,6 +55,7 @@
             <td>{{ event.start_time }}</td>
             <td>{{ event.scoring_model }}</td>
             <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEventModal-{{ event.id }}">Edit</button>
                 <a href="{{ url_for('delete_event', event_id=event.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
             </td>
         </tr>
@@ -129,6 +131,79 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Sport Modal -->
+{% for sport in sports %}
+<div class="modal fade" id="editSportModal-{{ sport.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Sport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_sport', sport_id=sport.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sport Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ sport.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description">{{ sport.description }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Edit Event Modal -->
+{% for event in events %}
+<div class="modal fade" id="editEventModal-{{ event.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_event', event_id=event.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Event Title</label>
+                        <input type="text" class="form-control" name="title" value="{{ event.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}" {% if sport.id == event.sport_id %}selected{% endif %}>{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Venue</label>
+                        <input type="text" class="form-control" name="venue" value="{{ event.venue }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" name="start_time" value="{{ event.start_time }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scoring Model</label>
+                        <select class="form-select" name="scoring_model" required>
+                            <option value="points" {% if event.scoring_model == 'points' %}selected{% endif %}>Points-based</option>
+                            <option value="victory" {% if event.scoring_model == 'victory' %}selected{% endif %}>Straight Victory</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 {% endblock %}
 

@@ -4,6 +4,17 @@
 
 {% block content %}
 <h1 class="mt-5">Leaderboard</h1>
+
+<div class="my-3">
+    <label for="sport-filter" class="form-label">Filter by Sport:</label>
+    <select id="sport-filter" class="form-select">
+        <option value="all" selected>All Sports</option>
+        {% for sport in sports %}
+        <option value="{{ sport.id }}">{{ sport.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
 <div class="row">
     <div class="col-md-8">
         <canvas id="leaderboardChart"></canvas>
@@ -27,11 +38,18 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
-    const response = await fetch('/api/leaderboard');
-    const data = await response.json();
+document.addEventListener('DOMContentLoaded', function() {
+    const sportFilter = document.getElementById('sport-filter');
+    let leaderboardChart;
 
-    const tableBody = document.querySelector('#leaderboard-table tbody');
+    async function fetchAndRenderLeaderboard(sportId = 'all') {
+        const response = await fetch(`/api/leaderboard?sport_id=${sportId}`);
+        const data = await response.json();
+        renderLeaderboard(data);
+    }
+
+    function renderLeaderboard(data) {
+        const tableBody = document.querySelector('#leaderboard-table tbody');
     tableBody.innerHTML = '';
 
     const labels = [];
@@ -69,6 +87,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
     });
+    }
+
+    sportFilter.addEventListener('change', function() {
+        fetchAndRenderLeaderboard(this.value);
+    });
+
+    // Initial load
+    fetchAndRenderLeaderboard();
 });
 </script>
 {% endblock %}

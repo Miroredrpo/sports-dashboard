@@ -6,21 +6,15 @@
 <h1 class="mt-5">Data Graphs</h1>
 
 <div class="mt-4">
-    <h3>Cumulative Points Timeline</h3>
-    <canvas id="cumulativeChart"></canvas>
-</div>
-
-<hr class="my-5">
-
-<div class="mt-4">
     <h3>Points by Game</h3>
     <select id="game-selector" class="form-select">
         <option selected>Select a game...</option>
         {% for game in games %}
-        <option value="{{ game.id }}">{{ game.title }}</option>
+        <option value="{{ game.id }}" data-description="{{ game.sport.description }}">{{ game.title }}</option>
         {% endfor %}
     </select>
     <canvas id="byGameChart" class="mt-3"></canvas>
+    <div id="sport-description" class="mt-3"></div>
 </div>
 {% endblock %}
 
@@ -28,33 +22,22 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
-    // Cumulative Chart
-    const cumulativeResponse = await fetch('/api/graphs/cumulative');
-    const cumulativeData = await cumulativeResponse.json();
-
-    const cumulativeCtx = document.getElementById('cumulativeChart').getContext('2d');
-    new Chart(cumulativeCtx, {
-        type: 'line',
-        data: {
-            labels: cumulativeData.dates,
-            datasets: Object.keys(cumulativeData.series).map(houseName => {
-                return {
-                    label: houseName,
-                    data: cumulativeData.series[houseName],
-                    fill: false,
-                    tension: 0.1
-                };
-            })
-        }
-    });
-
     // By Game Chart
     const gameSelector = document.getElementById('game-selector');
+    const descriptionDiv = document.getElementById('sport-description');
     let byGameChart;
 
     gameSelector.addEventListener('change', async function() {
+        const selectedOption = this.options[this.selectedIndex];
         const eventId = this.value;
-        if (!eventId) return;
+        const description = selectedOption.dataset.description;
+
+        if (!eventId) {
+            descriptionDiv.textContent = '';
+            return;
+        }
+
+        descriptionDiv.textContent = description || 'No description available.';
 
         const response = await fetch(`/api/graphs/by_event?event_id=${eventId}`);
         const data = await response.json();
