@@ -2,7 +2,7 @@ import os
 import csv
 import io
 from functools import wraps
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from postgrest.exceptions import APIError
@@ -64,6 +64,7 @@ def signup():
         password = request.form.get("password")
         try:
             supabase.auth.sign_up({"email": email, "password": password})
+            flash("A verification link has been sent to your email. Please verify your account before logging in.", "info")
             return redirect(url_for('login'))
         except Exception as e:
             return render_template("signup.html", error=str(e))
