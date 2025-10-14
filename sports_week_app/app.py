@@ -476,17 +476,20 @@ def create_individual_competition(sport_id):
     sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
 
     if match_type == '1v1':
-        p1 = request.form.get("p1_1v1")
-        p2 = request.form.get("p2_1v1")
-        student_ids = [p1, p2]
-        title = f"1v1 Individual Competition for {sport['name']}"
+        p1_id = request.form.get("p1_1v1")
+        p2_id = request.form.get("p2_1v1")
+        student_ids = [p1_id, p2_id]
+        students = supabase.table('students').select('full_name, houses!inner(name)').in_('id', student_ids).execute().data
+        s1 = next(s for s in students if s['id'] == int(p1_id))
+        s2 = next(s for s in students if s['id'] == int(p2_id))
+        title = f"{s1['houses']['name']} vs {s2['houses']['name']} ({s1['full_name']} vs {s2['full_name']})"
     else: # 2v2
         p1_t1 = request.form.get("p1_2v2_t1")
         p2_t1 = request.form.get("p2_2v2_t1")
         p1_t2 = request.form.get("p1_2v2_t2")
         p2_t2 = request.form.get("p2_2v2_t2")
         student_ids = [p1_t1, p2_t1, p1_t2, p2_t2]
-        title = f"2v2 Individual Competition for {sport['name']}"
+        title = f"2v2 Individual Competition for {sport['name']}" # Simplified for now
 
     event = supabase.table('events').insert({
         "sport_id": sport_id,
