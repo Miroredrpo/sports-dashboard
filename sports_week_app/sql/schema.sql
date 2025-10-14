@@ -50,6 +50,7 @@ CREATE TABLE competition_houses (
 CREATE TABLE competition_students (
     competition_id INTEGER REFERENCES competitions(id) ON DELETE CASCADE,
     student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+    team_number INTEGER, -- 1 or 2 for 2v2 matches
     PRIMARY KEY (competition_id, student_id)
 );
 

@@ -158,6 +158,51 @@ def delete_house(house_id):
             return jsonify({"success": False, "error": str(e)}), 500
         return redirect(url_for('manage_houses'))
 
+# --- Student Management ---
+@app.route("/admin/students")
+@admin_required
+def manage_students():
+    students = supabase.table('students').select('*, houses!inner(name)').execute().data
+    houses = supabase.table('houses').select('*').execute().data
+    return render_template("manage_students.html", students=students, houses=houses)
+
+@app.route("/admin/students/add", methods=["POST"])
+@admin_required
+def add_student():
+    try:
+        supabase.table('students').insert({
+            "full_name": request.form.get("full_name"),
+            "roll_no": request.form.get("roll_no") or None,
+            "house_id": request.form.get("house_id"),
+            "email": request.form.get("email") or None
+        }).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/admin/students/edit/<int:student_id>", methods=["POST"])
+@admin_required
+def edit_student(student_id):
+    try:
+        supabase.table('students').update({
+            "full_name": request.form.get("full_name"),
+            "roll_no": request.form.get("roll_no") or None,
+            "house_id": request.form.get("house_id"),
+            "email": request.form.get("email") or None
+        }).eq('id', student_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/admin/students/delete/<int:student_id>", methods=["POST"])
+@admin_required
+def delete_student(student_id):
+    try:
+        supabase.table('students').delete().eq('id', student_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # --- Student Import Routes ---
 @app.route("/admin/students/import")
 @admin_required
@@ -427,12 +472,25 @@ def setup_competition(sport_id):
 @app.route("/competitions/create/individual/<int:sport_id>", methods=["POST"])
 @admin_required
 def create_individual_competition(sport_id):
-    student_ids = request.form.getlist("student_ids")
+    match_type = request.form.get("match_type")
     sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
+
+    if match_type == '1v1':
+        p1 = request.form.get("p1_1v1")
+        p2 = request.form.get("p2_1v1")
+        student_ids = [p1, p2]
+        title = f"1v1 Individual Competition for {sport['name']}"
+    else: # 2v2
+        p1_t1 = request.form.get("p1_2v2_t1")
+        p2_t1 = request.form.get("p2_2v2_t1")
+        p1_t2 = request.form.get("p1_2v2_t2")
+        p2_t2 = request.form.get("p2_2v2_t2")
+        student_ids = [p1_t1, p2_t1, p1_t2, p2_t2]
+        title = f"2v2 Individual Competition for {sport['name']}"
 
     event = supabase.table('events').insert({
         "sport_id": sport_id,
-        "title": f"Individual Competition for {sport['name']}",
+        "title": title,
         "scoring_model": "points"
     }).execute().data[0]
 
@@ -441,15 +499,23 @@ def create_individual_competition(sport_id):
         "type": "individual"
     }).execute().data[0]
 
-    supabase.table('competition_students').insert(
-        [{"competition_id": competition['id'], "student_id": sid} for sid in student_ids]
-    ).execute()
+    if match_type == '1v1':
+        participants = [{"competition_id": competition['id'], "student_id": sid} for sid in student_ids]
+    else: # 2v2
+        participants = [
+            {"competition_id": competition['id'], "student_id": p1_t1, "team_number": 1},
+            {"competition_id": competition['id'], "student_id": p2_t1, "team_number": 1},
+            {"competition_id": competition['id'], "student_id": p1_t2, "team_number": 2},
+            {"competition_id": competition['id'], "student_id": p2_t2, "team_number": 2},
+        ]
+
+    supabase.table('competition_students').insert(participants).execute()
 
     supabase.table('audit_log').insert({
         "action_type": "create_competition",
         "table_name": "competitions",
         "record_id": competition['id'],
-        "new_value": {"type": "individual", "event_id": event['id'], "participants": student_ids},
+        "new_value": {"type": "individual", "match_type": match_type, "event_id": event['id'], "participants": student_ids},
         "performed_by": session['user']
     }).execute()
 

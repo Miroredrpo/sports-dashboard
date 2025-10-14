@@ -23,34 +23,8 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Individual Competition</h5>
-                <p class="card-text">Setup a competition for individual participants.</p>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#individualCompetitionModal">Create Individual Competition</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Individual Competition Modal -->
-<div class="modal fade" id="individualCompetitionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create Individual Competition</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{{ url_for('create_individual_competition', sport_id=sport.id) }}" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Select Participants</label>
-                        <select class="form-select" name="student_ids" multiple required size="10">
-                            {% for student in students %}
-                            <option value="{{ student.id }}">{{ student.full_name }} ({{ student.houses.name }})</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Hold Ctrl/Cmd to select multiple participants.</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Create Competition</button>
-                </form>
+                <p class="card-text">Create a 1v1 or 2v2 competition between students.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#individualCompetitionModal">Create</button>
             </div>
         </div>
     </div>
@@ -67,7 +41,7 @@
             <div class="modal-body">
                 <form action="{{ url_for('create_group_competition', sport_id=sport.id) }}" method="POST">
                     <div class="mb-3">
-                        <label for="house1_id" class="form-label">Select First House</label>
+                        <label class="form-label">Select First House</label>
                         <select class="form-select" name="house1_id" required>
                             {% for house in houses %}
                             <option value="{{ house.id }}">{{ house.name }}</option>
@@ -75,7 +49,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="house2_id" class="form-label">Select Second House</label>
+                        <label class="form-label">Select Second House</label>
                         <select class="form-select" name="house2_id" required>
                             {% for house in houses %}
                             <option value="{{ house.id }}">{{ house.name }}</option>
@@ -88,4 +62,97 @@
         </div>
     </div>
 </div>
+
+<!-- Individual Competition Modal -->
+<div class="modal fade" id="individualCompetitionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Individual Competition</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('create_individual_competition', sport_id=sport.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Competition Type</label>
+                        <select class="form-select" name="match_type" id="match-type-select">
+                            <option value="1v1">1 vs 1</option>
+                            <option value="2v2">2 vs 2</option>
+                        </select>
+                    </div>
+
+                    <!-- 1v1 Fields -->
+                    <div id="1v1-fields">
+                        <div class="mb-3">
+                            <label class="form-label">Player 1</label>
+                            <select class="form-select" name="p1_1v1">
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Player 2</label>
+                            <select class="form-select" name="p2_1v1">
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 2v2 Fields -->
+                    <div id="2v2-fields" style="display: none;">
+                        <h6>Team 1</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Player 1</label>
+                            <select class="form-select" name="p1_2v2_t1">
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Player 2</label>
+                            <select class="form-select" name="p2_2v2_t1">
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <hr>
+                        <h6>Team 2</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Player 1</label>
+                            <select class="form-select" name="p1_2v2_t2">
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Player 2</label>
+                            <select class="form-select" name="p2_2v2_t2">
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Competition</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('match-type-select').addEventListener('change', function() {
+        const is1v1 = this.value === '1v1';
+        document.getElementById('1v1-fields').style.display = is1v1 ? 'block' : 'none';
+        document.getElementById('2v2-fields').style.display = is1v1 ? 'none' : 'block';
+    });
+</script>
 {% endblock %}
