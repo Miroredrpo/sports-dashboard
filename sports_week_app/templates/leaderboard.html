@@ -46,7 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const sportFilter = document.getElementById('sport-filter');
     let leaderboardChart;
 
-    async function fetchAndRenderLeaderboard(sportId = 'all') {
+    async function fetchAndRenderLeaderboard(sportId) {
+        localStorage.setItem('leaderboard_sport_filter', sportId); // Save filter state
         const response = await fetch(`/api/leaderboard?sport_id=${sportId}`);
         const data = await response.json();
         renderLeaderboard(data);
@@ -57,51 +58,53 @@ document.addEventListener('DOMContentLoaded', function() {
             leaderboardChart.destroy();
         }
         const tableBody = document.querySelector('#leaderboard-table tbody');
-    tableBody.innerHTML = '';
+        tableBody.innerHTML = '';
 
-    const labels = [];
-    const points = [];
-    const colors = [];
+        const labels = [];
+        const points = [];
+        const colors = [];
 
-    data.forEach(house => {
-        labels.push(house.name);
-        points.push(house.points);
-        colors.push(house.color);
+        data.forEach(house => {
+            labels.push(house.name);
+            points.push(house.points);
+            colors.push(house.color);
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${house.name}</td><td>${house.points}</td>`;
-        tableBody.appendChild(tr);
-    });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${house.name}</td><td>${house.points}</td>`;
+            tableBody.appendChild(tr);
+        });
 
-    const ctx = document.getElementById('leaderboardChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total Points',
-                data: points,
-                backgroundColor: colors,
-                borderColor: colors,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+        const ctx = document.getElementById('leaderboardChart').getContext('2d');
+        leaderboardChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Points',
+                    data: points,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
-    });
+        });
     }
 
     sportFilter.addEventListener('change', function() {
         fetchAndRenderLeaderboard(this.value);
     });
 
-    // Initial load
-    fetchAndRenderLeaderboard();
+    // Initial load, applying saved filter
+    const savedFilter = localStorage.getItem('leaderboard_sport_filter') || 'all';
+    sportFilter.value = savedFilter;
+    fetchAndRenderLeaderboard(savedFilter);
 });
 </script>
 {% endblock %}

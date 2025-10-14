@@ -125,8 +125,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: new URLSearchParams(formData)
             });
-            if (response.ok) {
-                window.location.reload();
+            const result = await response.json();
+            if (result.success) {
+                // Dynamically update the UI instead of reloading
+                const roundRow = document.getElementById(`round-row-${result.round.id}`);
+                if (roundRow) {
+                    const detailsCell = roundRow.querySelector('td:nth-child(3)');
+                    detailsCell.textContent = result.round.details;
+                    // You would also update the scores here in a real application
+                }
+
+                // Hide the modal manually
+                const modalElement = form.closest('.modal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+
+                // Show a success alert
+                showAlert('Round updated successfully!', 'success');
+
             } else {
                 alert('An error occurred.');
             }

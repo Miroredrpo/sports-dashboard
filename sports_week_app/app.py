@@ -19,16 +19,16 @@ supabase: Client = create_client(supabase_url, supabase_key)
 # --- Role Checking Functions ---
 def is_admin(user_id):
     try:
-        res = supabase.table('admins').select('user_id').eq('user_id', user_id).execute()
-        return len(res.data) > 0
+        res = supabase.table('admins').select('user_id').eq('user_id', user_id).execute().data
+        return len(res) > 0
     except Exception as e:
         print(e)
         return False
 
 def is_teacher(user_id):
     try:
-        res = supabase.table('teachers').select('user_id').eq('user_id', user_id).execute()
-        return len(res.data) > 0
+        res = supabase.table('teachers').select('user_id').eq('user_id', user_id).execute().data
+        return len(res) > 0
     except Exception as e:
         print(e)
         return False
@@ -601,8 +601,15 @@ def edit_competition_round(round_id):
         "performed_by": session['user']
     }).execute()
 
-    competition_id = supabase.table('competition_rounds').select('competition_id').eq('id', round_id).single().execute().data['competition_id']
-    return redirect(url_for('manage_competition', competition_id=competition_id))
+    # Return the updated data to the client
+    updated_round = supabase.table('competition_rounds').select('*, scores!left(*)').eq('id', round_id).single().execute().data
+    for score in updated_round.get('scores', []):
+        if score.get('house_id'):
+            score['houses'] = supabase.table('houses').select('name').eq('id', score['house_id']).single().execute().data
+        if score.get('student_id'):
+            score['students'] = supabase.table('students').select('full_name').eq('id', score['student_id']).single().execute().data
+
+    return jsonify({"success": True, "round": updated_round})
 
 @app.route("/competitions/rounds/delete/<int:round_id>", methods=["POST"])
 @admin_required
