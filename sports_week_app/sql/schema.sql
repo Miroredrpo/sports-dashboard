@@ -1,24 +1,30 @@
 -- Create the houses table
 CREATE TABLE houses (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    color VARCHAR(7) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    color VARCHAR(7) NOT NULL,
+    school_level VARCHAR(50) NOT NULL, -- high_school, middle_school, elementary
+    UNIQUE(name, school_level)
 );
 
 -- Create the students table
 CREATE TABLE students (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
-    roll_no VARCHAR(255) UNIQUE,
+    roll_no VARCHAR(255),
     house_id INTEGER REFERENCES houses(id),
-    email VARCHAR(255)
+    email VARCHAR(255),
+    school_level VARCHAR(50) NOT NULL,
+    UNIQUE(roll_no, school_level)
 );
 
 -- Create the sports table
 CREATE TABLE sports (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    description TEXT
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    school_level VARCHAR(50) NOT NULL,
+    UNIQUE(name, school_level)
 );
 
 -- Create the events (formerly games) table
@@ -28,7 +34,8 @@ CREATE TABLE events (
     title VARCHAR(255) NOT NULL,
     start_time TIMESTAMPTZ NULL,
     venue VARCHAR(255),
-    scoring_model VARCHAR(50) NOT NULL CHECK (scoring_model IN ('points', 'victory'))
+    scoring_model VARCHAR(50) NOT NULL CHECK (scoring_model IN ('points', 'victory')),
+    school_level VARCHAR(50) NOT NULL
 );
 
 -- Create the competitions table for head-to-head matchups
@@ -36,7 +43,8 @@ CREATE TABLE competitions (
     id SERIAL PRIMARY KEY,
     event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL CHECK (type IN ('group', 'individual')),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    school_level VARCHAR(50) NOT NULL
 );
 
 -- Create a linking table for houses in a group competition
@@ -100,8 +108,11 @@ CREATE TABLE winners (
     id SERIAL PRIMARY KEY,
     sport_id INTEGER REFERENCES sports(id) ON DELETE CASCADE,
     house_id INTEGER REFERENCES houses(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
     status VARCHAR(50) DEFAULT 'announced', -- e.g., 'announced', 'coming_soon'
-    UNIQUE(sport_id)
+    school_level VARCHAR(50) NOT NULL,
+    UNIQUE(sport_id, school_level),
+    CONSTRAINT house_or_student_winner CHECK (house_id IS NOT NULL OR student_id IS NOT NULL)
 );
 
 -- Indexes

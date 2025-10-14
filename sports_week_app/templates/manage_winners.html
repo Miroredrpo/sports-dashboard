@@ -13,7 +13,7 @@
     <thead>
         <tr>
             <th>Sport</th>
-            <th>Winning House</th>
+            <th>Winner</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -22,9 +22,18 @@
         {% for winner in winners %}
         <tr>
             <td>{{ winner.sports.name }}</td>
-            <td>{{ winner.houses.name if winner.houses else 'N/A' }}</td>
+            <td>
+                {% if winner.houses %}
+                    {{ winner.houses.name }} (Group)
+                {% elif winner.students %}
+                    {{ winner.students.houses.name }} ({{ winner.students.full_name }})
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
             <td>{{ winner.status }}</td>
             <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editWinnerModal-{{ winner.id }}">Edit</button>
                 <a href="{{ url_for('delete_winner', winner_id=winner.id) }}" class="btn btn-sm btn-danger delete-btn">Remove</a>
             </td>
         </tr>
@@ -51,11 +60,20 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Winning House</label>
+                        <label class="form-label">Group (House) Winner</label>
                         <select class="form-select" name="house_id">
-                            <option value="">-- Select a Winner --</option>
+                            <option value="">-- Select a House --</option>
                             {% for house in houses %}
                             <option value="{{ house.id }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Individual Winner</label>
+                        <select class="form-select" name="student_id">
+                            <option value="">-- Select a Student --</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.full_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -67,13 +85,56 @@
                             <option value="not_yet_done">Not Yet Done</option>
                         </select>
                     </div>
-                    <div class="form-text">If a winner is selected, status will be 'Announced'. Otherwise, select 'Coming Soon' or 'Not Yet Done'.</div>
                     <button type="submit" class="btn btn-primary mt-3">Save</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+{% for winner in winners %}
+<div class="modal fade" id="editWinnerModal-{{ winner.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Winner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_winner', winner_id=winner.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Group (House) Winner</label>
+                        <select class="form-select" name="house_id">
+                            <option value="">-- Select a House --</option>
+                            {% for house in houses %}
+                            <option value="{{ house.id }}" {% if winner.house_id == house.id %}selected{% endif %}>{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Individual Winner</label>
+                        <select class="form-select" name="student_id">
+                            <option value="">-- Select a Student --</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}" {% if winner.student_id == student.id %}selected{% endif %}>{{ student.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status" required>
+                            <option value="announced" {% if winner.status == 'announced' %}selected{% endif %}>Announced</option>
+                            <option value="coming_soon" {% if winner.status == 'coming_soon' %}selected{% endif %}>Coming Soon</option>
+                            <option value="not_yet_done" {% if winner.status == 'not_yet_done' %}selected{% endif %}>Not Yet Done</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}

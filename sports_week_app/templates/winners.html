@@ -46,8 +46,7 @@
 
 <div id="winner-display" class="text-center" style="display: none;">
     <h2 id="sport-name"></h2>
-    <h3 id="winner-house" class="display-4"></h3>
-    <p id="status-message" class="text-muted"></p>
+    <div id="winner-details"></div>
 </div>
 
 {% endblock %}
@@ -58,8 +57,7 @@
     const sportSelect = document.getElementById('sport-select');
     const winnerDisplay = document.getElementById('winner-display');
     const sportNameEl = document.getElementById('sport-name');
-    const winnerHouseEl = document.getElementById('winner-house');
-    const statusMessageEl = document.getElementById('status-message');
+    const winnerDetailsEl = document.getElementById('winner-details');
     const confettiContainer = document.getElementById('confetti-container');
 
     sportSelect.addEventListener('change', function() {
@@ -68,16 +66,21 @@
 
         winnerDisplay.style.display = 'none';
         confettiContainer.innerHTML = '';
+        winnerDetailsEl.innerHTML = '';
 
         if (winner) {
             sportNameEl.textContent = winner.sports.name;
-            if (winner.status === 'announced' && winner.houses) {
-                winnerHouseEl.textContent = `🎉 ${winner.houses.name} 🎉`;
-                statusMessageEl.textContent = 'Congratulations to the champions!';
-                triggerConfetti();
+            if (winner.status === 'announced') {
+                if (winner.houses) {
+                    winnerDetailsEl.innerHTML = `<h3 class="display-4">🎉 ${winner.houses.name} 🎉</h3><p class="text-muted">Group Winner</p>`;
+                    triggerConfetti();
+                }
+                if (winner.students) {
+                    winnerDetailsEl.innerHTML += `<h4 class="mt-4">${winner.students.houses.name} (${winner.students.full_name})</h4><p class="text-muted">Individual Winner</p>`;
+                    triggerConfetti();
+                }
             } else {
-                winnerHouseEl.textContent = '';
-                statusMessageEl.textContent = winner.status.replace(/_/g, ' ');
+                winnerDetailsEl.innerHTML = `<p class="text-muted">${winner.status.replace(/_/g, ' ')}</p>`;
             }
             winnerDisplay.style.display = 'block';
         }

@@ -5,35 +5,64 @@
 {% block content %}
 <h1 class="mt-5">Data Graphs</h1>
 
-<div class="mt-4">
-    <h3>Points by Game</h3>
-    <select id="game-selector" class="form-select">
-        <option selected>Select a game...</option>
-        {% for game in games %}
-        <option value="{{ game.id }}" data-description="{{ game.sport.description }}">{{ game.title }}</option>
+<div class="my-3">
+    <label for="sport-filter" class="form-label">Filter by Sport:</label>
+    <select id="sport-filter" class="form-select">
+        <option value="all" selected>All Sports</option>
+        {% for sport in sports %}
+        <option value="{{ sport.id }}">{{ sport.name }}</option>
         {% endfor %}
     </select>
+</div>
+
+<div class="mt-4">
+    <h3>Points by Event</h3>
+    <select id="event-selector" class="form-select">
+        <option selected>Select an event...</option>
+    </select>
     <div id="sport-description" class="mt-3"></div>
-    <canvas id="byGameChart" class="mt-3"></canvas>
+    <canvas id="byEventChart" class="mt-3"></canvas>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
-    // By Game Chart
-    const gameSelector = document.getElementById('game-selector');
+document.addEventListener('DOMContentLoaded', function() {
+    const sportFilter = document.getElementById('sport-filter');
+    const eventSelector = document.getElementById('event-selector');
     const descriptionDiv = document.getElementById('sport-description');
-    let byGameChart;
+    let byEventChart;
 
-    gameSelector.addEventListener('change', async function() {
+    const allEvents = {{ games|tojson }};
+
+    function populateEvents(sportId) {
+        eventSelector.innerHTML = '<option selected>Select an event...</option>';
+        const filteredEvents = sportId === 'all' ? allEvents : allEvents.filter(e => e.sport_id == sportId);
+
+        filteredEvents.forEach(event => {
+            const option = document.createElement('option');
+            option.value = event.id;
+            option.textContent = event.title;
+            option.dataset.description = event.sport.description;
+            eventSelector.appendChild(option);
+        });
+    }
+
+    sportFilter.addEventListener('change', function() {
+        populateEvents(this.value);
+        if (byEventChart) byEventChart.destroy();
+        descriptionDiv.textContent = '';
+    });
+
+    eventSelector.addEventListener('change', async function() {
         const selectedOption = this.options[this.selectedIndex];
         const eventId = this.value;
         const description = selectedOption.dataset.description;
 
         if (!eventId) {
             descriptionDiv.textContent = '';
+            if (byEventChart) byEventChart.destroy();
             return;
         }
 
@@ -45,17 +74,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const labels = data.breakdown.map(item => item.house);
         const points = data.breakdown.map(item => item.points);
 
-        if (byGameChart) {
-            byGameChart.destroy();
+        if (byEventChart) {
+            byEventChart.destroy();
         }
 
-        const byGameCtx = document.getElementById('byGameChart').getContext('2d');
-        byGameChart = new Chart(byGameCtx, {
+        const byEventCtx = document.getElementById('byEventChart').getContext('2d');
+        byEventChart = new Chart(byEventCtx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Points in this Game',
+                    label: 'Points in this Event',
                     data: points,
                     borderWidth: 1
                 }]
@@ -69,6 +98,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
     });
+
+    // Initial load
+    populateEvents('all');
 });
 </script>
 {% endblock %}

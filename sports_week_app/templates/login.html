@@ -29,6 +29,14 @@
         {% endif %}
         <form method="POST" class="mt-4">
             <div class="mb-3">
+                <label for="school_level" class="form-label">Select Your School</label>
+                <select class="form-select" name="school_level" required>
+                    <option value="high_school">High School</option>
+                    <option value="middle_school">Middle School</option>
+                    <option value="elementary">Elementary School</option>
+                </select>
+            </div>
+            <div class="mb-3">
                 <label for="email" class="form-label">Email address</label>
                 <input type="email" class="form-control" id="email" name="email" required>
             </div>
