@@ -26,7 +26,7 @@ CREATE TABLE events (
     id SERIAL PRIMARY KEY,
     sport_id INTEGER REFERENCES sports(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
-    start_time TIMESTAMPTZ,
+    start_time TIMESTAMPTZ NULL,
     venue VARCHAR(255),
     scoring_model VARCHAR(50) NOT NULL CHECK (scoring_model IN ('points', 'victory'))
 );
@@ -92,6 +92,15 @@ CREATE TABLE admins (
 
 CREATE TABLE teachers (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id)
+);
+
+-- Winners table
+CREATE TABLE winners (
+    id SERIAL PRIMARY KEY,
+    sport_id INTEGER REFERENCES sports(id) ON DELETE CASCADE,
+    house_id INTEGER REFERENCES houses(id) ON DELETE CASCADE,
+    status VARCHAR(50) DEFAULT 'announced', -- e.g., 'announced', 'coming_soon'
+    UNIQUE(sport_id)
 );
 
 -- Indexes

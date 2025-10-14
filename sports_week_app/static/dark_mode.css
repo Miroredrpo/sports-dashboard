@@ -16,6 +16,23 @@ body.dark-mode {
 }
 
 .dark-mode .navbar-brand,
-.dark-mode .nav-link {
+.dark-mode .nav-link,
+.dark-mode .form-check-label {
     color: #ffffff !important;
+}
+
+.dark-mode .table {
+    color: #ffffff;
+}
+
+.dark-mode .form-control {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border-color: #444;
+}
+
+.dark-mode .form-select {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border-color: #444;
 }

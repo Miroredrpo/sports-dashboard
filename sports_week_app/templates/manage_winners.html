@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Winners{% endblock %}
+
+{% block content %}
+<div id="alert-container"></div>
+<h1 class="mt-5">Manage Winners</h1>
+<p>Declare the final winner for each sport.</p>
+
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addWinnerModal">Set Winner</button>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Sport</th>
+            <th>Winning House</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for winner in winners %}
+        <tr>
+            <td>{{ winner.sports.name }}</td>
+            <td>{{ winner.houses.name if winner.houses else 'N/A' }}</td>
+            <td>{{ winner.status }}</td>
+            <td>
+                <a href="{{ url_for('delete_winner', winner_id=winner.id) }}" class="btn btn-sm btn-danger delete-btn">Remove</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add/Edit Winner Modal -->
+<div class="modal fade" id="addWinnerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set a Winner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_winner') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}">{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Winning House</label>
+                        <select class="form-select" name="house_id">
+                            <option value="">-- Select a Winner --</option>
+                            {% for house in houses %}
+                            <option value="{{ house.id }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status" required>
+                            <option value="announced">Announced</option>
+                            <option value="coming_soon">Coming Soon</option>
+                            <option value="not_yet_done">Not Yet Done</option>
+                        </select>
+                    </div>
+                    <div class="form-text">If a winner is selected, status will be 'Announced'. Otherwise, select 'Coming Soon' or 'Not Yet Done'.</div>
+                    <button type="submit" class="btn btn-primary mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Generic AJAX form submission and delete handling
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('An error occurred.');
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to remove this winner entry?')) {
+                const response = await fetch(e.target.href, { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('An error occurred during deletion.');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

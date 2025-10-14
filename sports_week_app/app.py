@@ -360,6 +360,48 @@ def delete_event(event_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# --- Winners Page ---
+@app.route("/winners")
+def winners():
+    winners_data = supabase.table('winners').select('*, sports!inner(name), houses!left(name)').execute().data
+    return render_template("winners.html", winners=winners_data)
+
+@app.route("/admin/winners")
+@admin_required
+def manage_winners():
+    winners_data = supabase.table('winners').select('*, sports!inner(name), houses!left(name)').execute().data
+    sports = supabase.table('sports').select('id, name').execute().data
+    houses = supabase.table('houses').select('id, name').execute().data
+    return render_template("manage_winners.html", winners=winners_data, sports=sports, houses=houses)
+
+@app.route("/admin/winners/add", methods=["POST"])
+@admin_required
+def add_winner():
+    try:
+        sport_id = request.form.get("sport_id")
+        house_id = request.form.get("house_id")
+        status = request.form.get("status")
+
+        # Upsert logic: update if sport_id exists, else insert
+        supabase.table('winners').upsert({
+            "sport_id": sport_id,
+            "house_id": house_id if house_id else None,
+            "status": status
+        }, on_conflict='sport_id').execute()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/admin/winners/delete/<int:winner_id>", methods=["POST"])
+@admin_required
+def delete_winner(winner_id):
+    try:
+        supabase.table('winners').delete().eq('id', winner_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # --- New Competition Workflow ---
 @app.route("/update-scores")
 @admin_required
@@ -627,35 +669,6 @@ def api_leaderboard():
 
     sorted_leaderboard = sorted(house_points.values(), key=lambda x: x['points'], reverse=True)
     return jsonify(sorted_leaderboard)
-
-@app.route("/api/graphs/cumulative")
-@login_required
-def api_graphs_cumulative():
-    scores = supabase.table('scores').select('recorded_at, points, houses!inner(name)').order('recorded_at', desc=False).execute().data
-
-    series = {}
-    dates = set()
-    house_cumulative_points = {}
-
-    houses = supabase.table('houses').select('name').execute().data
-    for house in houses:
-        house_name = house['name']
-        series[house_name] = []
-        house_cumulative_points[house_name] = 0
-
-    for score in scores:
-        if score.get('houses'):
-            dates.add(score['recorded_at'].split('T')[0])
-
-    sorted_dates = sorted(list(dates))
-
-    for date in sorted_dates:
-        for house_name in house_cumulative_points:
-            points_on_date = sum(s['points'] for s in scores if s.get('houses') and s['recorded_at'].split('T')[0] == date and s['houses']['name'] == house_name)
-            house_cumulative_points[house_name] += points_on_date
-            series[house_name].append(house_cumulative_points[house_name])
-
-    return jsonify({"dates": sorted_dates, "series": series})
 
 @app.route("/api/graphs/by_event")
 @login_required

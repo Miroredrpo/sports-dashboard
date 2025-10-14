@@ -33,6 +33,10 @@
         </table>
     </div>
 </div>
+
+<div class="mt-4 text-center text-muted">
+    <small>This is the total points accumulated by each house and may or may not represent the final winner. To view the finale results, visit the Winners Page.</small>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -49,6 +53,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderLeaderboard(data) {
+        if (leaderboardChart) {
+            leaderboardChart.destroy();
+        }
         const tableBody = document.querySelector('#leaderboard-table tbody');
     tableBody.innerHTML = '';
 
