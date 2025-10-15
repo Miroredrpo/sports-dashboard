@@ -2,19 +2,40 @@
 
 {% block title %}Update Scores{% endblock %}
 
-{% block content %}
-<h1 class="mt-5">Update Scores</h1>
-<p>Select a sport to create a new competition or manage existing ones.</p>
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    .sport-card {
+        transition: all 0.3s ease;
+    }
 
-<div class="list-group mt-4">
-    {% for sport in sports %}
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-            <h5 class="mb-1">{{ sport.name }}</h5>
-            <p class="mb-1">{{ sport.description }}</p>
-        </div>
-        <a href="{{ url_for('list_competitions', sport_id=sport.id) }}" class="btn btn-primary">Manage Competitions</a>
+    .sport-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Update Scores</h1>
+        <p class="lead">Select a sport to create a new competition or manage existing ones.</p>
     </div>
-    {% endfor %}
+
+    <div class="row">
+        {% for sport in sports %}
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 sport-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-futbol fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">{{ sport.name }}</h5>
+                    <p class="card-text">{{ sport.description }}</p>
+                    <a href="{{ url_for('list_competitions', sport_id=sport.id) }}" class="btn btn-primary">Manage Competitions</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

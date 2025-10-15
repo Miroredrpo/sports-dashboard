@@ -3,39 +3,62 @@
 {% block title %}Leaderboard{% endblock %}
 
 {% block content %}
-<h1 class="mt-5">Leaderboard</h1>
-
-<div class="my-3">
-    <label for="sport-filter" class="form-label">Filter by Sport:</label>
-    <select id="sport-filter" class="form-select">
-        <option value="all" selected>All Sports</option>
-        {% for sport in sports %}
-        <option value="{{ sport.id }}">{{ sport.name }}</option>
-        {% endfor %}
-    </select>
-</div>
-
-<div class="row">
-    <div class="col-md-8">
-        <canvas id="leaderboardChart"></canvas>
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Leaderboard</h1>
+        <p class="lead">See the current standings for each house.</p>
     </div>
-    <div class="col-md-4">
-        <h3>Current Standings</h3>
-        <table class="table" id="leaderboard-table">
-            <thead>
-                <tr>
-                    <th>House</th>
-                    <th>Points</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-</div>
 
-<div class="mt-4 text-center text-muted">
-    <small>This is the total points accumulated by each house and may or may not represent the final winner. To view the finale results, visit the Winners Page.</small>
+    <div class="row justify-content-center animated-fade-in">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="sport-filter" class="form-label">Filter by Sport:</label>
+                        <select id="sport-filter" class="form-select">
+                            <option value="all" selected>All Sports</option>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}">{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-8 mb-4 mb-lg-0 animated-fade-in">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="leaderboardChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 animated-fade-in">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Current Standings</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover" id="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>House</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 text-center text-muted animated-fade-in">
+        <small>This is the total points accumulated by each house and may or may not represent the final winner. To view the finale results, visit the Winners Page.</small>
+    </div>
 </div>
 {% endblock %}
 
@@ -84,10 +107,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: points,
                     backgroundColor: colors,
                     borderColor: colors,
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 5
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuad'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true

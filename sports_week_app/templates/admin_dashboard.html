@@ -2,15 +2,78 @@
 
 {% block title %}Admin Dashboard{% endblock %}
 
-{% block content %}
-    <h1 class="mt-5">Admin Dashboard</h1>
-    <p>Welcome to the admin dashboard. From here you can manage all aspects of the Sports Week application.</p>
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    .admin-card {
+        transition: all 0.3s ease;
+    }
 
-    <div class="list-group mt-4">
-        <a href="{{ url_for('manage_houses') }}" class="list-group-item list-group-item-action">Manage Houses</a>
-        <a href="{{ url_for('manage_students') }}" class="list-group-item list-group-item-action">Manage Students</a>
-        <a href="{{ url_for('import_students') }}" class="list-group-item list-group-item-action">Import Students</a>
-        <a href="{{ url_for('manage_events') }}" class="list-group-item list-group-item-action">Manage Events</a>
-        <a href="{{ url_for('manage_winners') }}" class="list-group-item list-group-item-action">Manage Winners</a>
+    .admin-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Admin Dashboard</h1>
+        <p class="lead">Manage all aspects of the Sports Week application.</p>
     </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 admin-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-home fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Manage Houses</h5>
+                    <p class="card-text">Add, edit, or delete house information.</p>
+                    <a href="{{ url_for('manage_houses') }}" class="btn btn-primary">Go to Houses</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 admin-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Manage Students</h5>
+                    <p class="card-text">Add, edit, or delete student records.</p>
+                    <a href="{{ url_for('manage_students') }}" class="btn btn-primary">Go to Students</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 admin-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-import fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Import Students</h5>
+                    <p class="card-text">Bulk upload students from a CSV file.</p>
+                    <a href="{{ url_for('import_students') }}" class="btn btn-primary">Import CSV</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 admin-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Manage Events</h5>
+                    <p class="card-text">Create, edit, or delete sports events.</p>
+                    <a href="{{ url_for('manage_events') }}" class="btn btn-primary">Go to Events</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 admin-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-trophy fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Manage Winners</h5>
+                    <p class="card-text">Announce and manage the winners of events.</p>
+                    <a href="{{ url_for('manage_winners') }}" class="btn btn-primary">Go to Winners</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

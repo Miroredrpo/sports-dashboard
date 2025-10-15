@@ -1,0 +1,108 @@
+/*
+    Modern Design System
+    --------------------
+    This file contains the new design system for the Sports Week App.
+    It includes a new color palette, typography, and styles for common elements.
+*/
+
+:root {
+    --primary-color: #6a11cb;
+    --secondary-color: #2575fc;
+    --background-color: #f0f2f5;
+    --text-color: #333;
+    --card-background-color: #ffffff;
+    --card-border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Poppins', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark-mode {
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --card-background-color: #1e1e1e;
+    --card-border-color: #2c2c2c;
+    --shadow-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn {
+    border-radius: 20px;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-image: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.card {
+    border-radius: 15px;
+    border: 1px solid var(--card-border-color);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    background-color: var(--card-background-color);
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid var(--card-border-color);
+    padding: 10px;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(37, 117, 252, 0.25);
+    border-color: var(--secondary-color);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animated-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animated-card-pop-in {
+    animation: fadeIn 0.6s ease-out forwards, scaleIn 0.6s ease-out forwards;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.95);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    .lead {
+        font-size: 1rem;
+    }
+}

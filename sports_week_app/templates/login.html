@@ -3,31 +3,62 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header">
-                        <strong class="me-auto">Notification</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">
-                        {{ message }}
-                    </div>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
+<style>
+    body {
+        overflow: hidden; /* Prevent scrollbars from appearing */
+    }
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <h1 class="mt-5">Login</h1>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-image: linear-gradient(45deg, #6a11cb, #2575fc);
+    }
+
+    .login-card {
+        max-width: 450px;
+        width: 100%;
+        padding: 40px;
+        border-radius: 20px;
+        background-color: var(--card-background-color);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1055;
+    }
+</style>
+
+<div class="login-container">
+    <div class="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast show animated-fade-in" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header">
+                            <strong class="me-auto">Notification</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            {{ message }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="login-card animated-fade-in">
+        <h1 class="text-center mb-4">Welcome Back!</h1>
         {% if error %}
             <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
-        <form method="POST" class="mt-4">
+        <form method="POST">
             <div class="mb-3">
                 <label for="school_level" class="form-label">Select Your School</label>
                 <select class="form-select" name="school_level" required>
@@ -44,9 +75,11 @@
                 <label for="password" class="form-label">Password</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
         </form>
-        <p class="mt-3">
+        <p class="mt-3 text-center">
             Don't have an account? <a href="{{ url_for('signup') }}">Sign up here</a>.
         </p>
     </div>
