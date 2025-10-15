@@ -411,41 +411,53 @@ def setup_competition(sport_id):
 @app.route("/competitions/create/individual/<int:sport_id>", methods=["POST"])
 @admin_required
 def create_individual_competition(sport_id):
-    match_type = request.form.get("match_type")
-    sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
+    try:
+        match_type = request.form.get("match_type")
+        sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
 
-    if match_type == '1v1':
-        p1_id, p2_id = request.form.get("p1_1v1"), request.form.get("p2_1v1")
-        student_ids = [p1_id, p2_id]
-        students = supabase.table('students').select('id, full_name, houses!inner(name)').in_('id', student_ids).execute().data
-        s1 = next((s for s in students if s['id'] == int(p1_id)), None)
-        s2 = next((s for s in students if s['id'] == int(p2_id)), None)
-        title = f"{s1['houses']['name']} vs {s2['houses']['name']} ({s1['full_name']} vs {s2['full_name']})" if s1 and s2 else f"1v1 {sport['name']}"
-    else: # 2v2
-        p1_t1, p2_t1 = request.form.get("p1_2v2_t1"), request.form.get("p2_2v2_t1")
-        p1_t2, p2_t2 = request.form.get("p1_2v2_t2"), request.form.get("p2_2v2_t2")
-        student_ids = [p1_t1, p2_t1, p1_t2, p2_t2]
-        title = f"2v2 {sport['name']}"
+        if match_type == '1v1':
+            p1_id, p2_id = request.form.get("p1_1v1"), request.form.get("p2_1v1")
+            if not p1_id or not p2_id: return "Both players must be selected for a 1v1 match.", 400
+            student_ids = [p1_id, p2_id]
+            students = supabase.table('students').select('id, full_name, houses!left(name)').in_('id', student_ids).execute().data
 
-    event = supabase.table('events').insert({"sport_id": sport_id, "title": title, "scoring_model": "points", "school_level": get_school_level()}).execute().data[0]
-    competition = supabase.table('competitions').insert({"event_id": event['id'], "type": "individual", "school_level": get_school_level()}).execute().data[0]
+            s1 = next((s for s in students if s['id'] == int(p1_id)), None)
+            s2 = next((s for s in students if s['id'] == int(p2_id)), None)
 
-    if match_type == '2v2':
-        participants = [
-            {"competition_id": competition['id'], "student_id": p1_t1, "team_number": 1},
-            {"competition_id": competition['id'], "student_id": p2_t1, "team_number": 1},
-            {"competition_id": competition['id'], "student_id": p1_t2, "team_number": 2},
-            {"competition_id": competition['id'], "student_id": p2_t2, "team_number": 2},
-        ]
-    else:
-        participants = [{"competition_id": competition['id'], "student_id": sid} for sid in student_ids]
-    supabase.table('competition_students').insert(participants).execute()
+            s1_house = s1.get('houses', {}).get('name') if s1 and s1.get('houses') else 'No House'
+            s2_house = s2.get('houses', {}).get('name') if s2 and s2.get('houses') else 'No House'
+            s1_name = s1['full_name'] if s1 else 'Unknown'
+            s2_name = s2['full_name'] if s2 else 'Unknown'
 
-    supabase.table('audit_log').insert({
-        "action_type": "create_competition", "record_id": competition['id'],
-        "new_value": {"type": "individual", "event_id": event['id']}, "performed_by": session['user']
-    }).execute()
-    return redirect(url_for('manage_competition', competition_id=competition['id']))
+            title = f"{s1_house} vs {s2_house} ({s1_name} vs {s2_name})"
+        else: # 2v2
+            p1_t1, p2_t1 = request.form.get("p1_2v2_t1"), request.form.get("p2_2v2_t1")
+            p1_t2, p2_t2 = request.form.get("p1_2v2_t2"), request.form.get("p2_2v2_t2")
+            student_ids = [p1_t1, p2_t1, p1_t2, p2_t2]
+            title = f"2v2 {sport['name']}"
+
+        event = supabase.table('events').insert({"sport_id": sport_id, "title": title, "scoring_model": "points", "school_level": get_school_level()}).execute().data[0]
+        competition = supabase.table('competitions').insert({"event_id": event['id'], "type": "individual", "school_level": get_school_level()}).execute().data[0]
+
+        if match_type == '2v2':
+            participants = [
+                {"competition_id": competition['id'], "student_id": p1_t1, "team_number": 1},
+                {"competition_id": competition['id'], "student_id": p2_t1, "team_number": 1},
+                {"competition_id": competition['id'], "student_id": p1_t2, "team_number": 2},
+                {"competition_id": competition['id'], "student_id": p2_t2, "team_number": 2},
+            ]
+        else:
+            participants = [{"competition_id": competition['id'], "student_id": sid} for sid in student_ids]
+        supabase.table('competition_students').insert(participants).execute()
+
+        supabase.table('audit_log').insert({
+            "action_type": "create_competition", "record_id": competition['id'],
+            "new_value": {"type": "individual", "event_id": event['id']}, "performed_by": session['user']
+        }).execute()
+        return redirect(url_for('manage_competition', competition_id=competition['id']))
+    except Exception as e:
+        flash(f"An error occurred: {e}", "danger")
+        return redirect(url_for('setup_competition', sport_id=sport_id))
 
 @app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
 @admin_required

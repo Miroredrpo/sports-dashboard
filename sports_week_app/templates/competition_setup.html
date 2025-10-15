@@ -3,6 +3,23 @@
 {% block title %}Setup Competition{% endblock %}
 
 {% block content %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="toast show bg-danger text-white" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">Error</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
 <h1 class="mt-5">Setup Competition for {{ sport.name }}</h1>
 <p>Choose the type of competition you want to create.</p>
 
