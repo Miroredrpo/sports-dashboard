@@ -451,7 +451,7 @@ def create_individual_competition(sport_id):
         supabase.table('competition_students').insert(participants).execute()
 
         supabase.table('audit_log').insert({
-            "action_type": "create_competition", "record_id": competition['id'],
+            "action_type": "create_competition", "table_name": "competitions", "record_id": competition['id'],
             "new_value": {"type": "individual", "event_id": event['id']}, "performed_by": session['user']
         }).execute()
         return redirect(url_for('manage_competition', competition_id=competition['id']))
@@ -462,33 +462,37 @@ def create_individual_competition(sport_id):
 @app.route("/competitions/create/group/<int:sport_id>", methods=["POST"])
 @admin_required
 def create_group_competition(sport_id):
-    house1_id, house2_id = int(request.form.get("house1_id")), int(request.form.get("house2_id"))
-    if house1_id == house2_id: return "Cannot create a competition between the same house", 400
     try:
-        existing = supabase.rpc('get_competition_between_houses', {'house1_id_param': house1_id, 'house2_id_param': house2_id, 'sport_id_param': sport_id}).execute().data
-        if existing: return redirect(url_for('manage_competition', competition_id=existing[0]['id']))
-    except APIError as e:
-        print(f"DB function check failed (expected if not created): {e}")
+        house1_id, house2_id = int(request.form.get("house1_id")), int(request.form.get("house2_id"))
+        if house1_id == house2_id: return "Cannot create a competition between the same house", 400
+        try:
+            existing = supabase.rpc('get_competition_between_houses', {'house1_id_param': house1_id, 'house2_id_param': house2_id, 'sport_id_param': sport_id}).execute().data
+            if existing: return redirect(url_for('manage_competition', competition_id=existing[0]['id']))
+        except APIError as e:
+            print(f"DB function check failed (expected if not created): {e}")
 
-    sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
-    houses = supabase.table('houses').select('id, name').in_('id', [house1_id, house2_id]).execute().data
-    house_names = {h['id']: h['name'] for h in houses}
+        sport = supabase.table('sports').select('name').eq('id', sport_id).single().execute().data
+        houses = supabase.table('houses').select('id, name').in_('id', [house1_id, house2_id]).execute().data
+        house_names = {h['id']: h['name'] for h in houses}
 
-    event = supabase.table('events').insert({
-        "sport_id": sport_id, "title": f"{sport['name']}: {house_names[house1_id]} vs {house_names[house2_id]}",
-        "scoring_model": "victory", "school_level": get_school_level()
-    }).execute().data[0]
-    competition = supabase.table('competitions').insert({"event_id": event['id'], "type": "group", "school_level": get_school_level()}).execute().data[0]
+        event = supabase.table('events').insert({
+            "sport_id": sport_id, "title": f"{sport['name']}: {house_names[house1_id]} vs {house_names[house2_id]}",
+            "scoring_model": "victory", "school_level": get_school_level()
+        }).execute().data[0]
+        competition = supabase.table('competitions').insert({"event_id": event['id'], "type": "group", "school_level": get_school_level()}).execute().data[0]
 
-    supabase.table('competition_houses').insert([
-        {"competition_id": competition['id'], "house_id": house1_id},
-        {"competition_id": competition['id'], "house_id": house2_id}
-    ]).execute()
-    supabase.table('audit_log').insert({
-        "action_type": "create_competition", "record_id": competition['id'],
-        "new_value": {"type": "group", "event_id": event['id']}, "performed_by": session['user']
-    }).execute()
-    return redirect(url_for('manage_competition', competition_id=competition['id']))
+        supabase.table('competition_houses').insert([
+            {"competition_id": competition['id'], "house_id": house1_id},
+            {"competition_id": competition['id'], "house_id": house2_id}
+        ]).execute()
+        supabase.table('audit_log').insert({
+            "action_type": "create_competition", "table_name": "competitions", "record_id": competition['id'],
+            "new_value": {"type": "group", "event_id": event['id']}, "performed_by": session['user']
+        }).execute()
+        return redirect(url_for('manage_competition', competition_id=competition['id']))
+    except Exception as e:
+        flash(f"An error occurred while creating group competition: {e}", "danger")
+        return redirect(url_for('setup_competition', sport_id=sport_id))
 
 @app.route("/competitions/manage/<int:competition_id>")
 @admin_required
