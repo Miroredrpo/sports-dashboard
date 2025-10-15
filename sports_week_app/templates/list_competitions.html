@@ -3,18 +3,29 @@
 {% block title %}Manage Competitions for {{ sport.name }}{% endblock %}
 
 {% block content %}
-<h1 class="mt-5">Manage Competitions for {{ sport.name }}</h1>
-<p>Select a competition to manage its rounds and scores, or create a new one.</p>
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Competitions for {{ sport.name }}</h1>
+        <p class="lead">Select a competition to manage its rounds and scores, or create a new one.</p>
+    </div>
 
-<a href="{{ url_for('setup_competition', sport_id=sport.id) }}" class="btn btn-primary my-3">Create New Competition</a>
+    <div class="d-flex justify-content-center mb-4 animated-fade-in">
+        <a href="{{ url_for('setup_competition', sport_id=sport.id) }}" class="btn btn-primary">Create New Competition</a>
+    </div>
 
-<h3 class="mt-4">Existing Competitions</h3>
-<div class="list-group">
-    {% for comp in competitions %}
-    <a href="{{ url_for('manage_competition', competition_id=comp.id) }}" class="list-group-item list-group-item-action">
-        {{ comp.events.title }} ({{ comp.type }}) - Created at {{ comp.created_at }}
-    </a>
-    {% endfor %}
+    <div class="card animated-fade-in">
+        <div class="card-header">
+            <h3>Existing Competitions</h3>
+        </div>
+        <div class="card-body">
+            <div class="list-group">
+                {% for comp in competitions %}
+                <a href="{{ url_for('manage_competition', competition_id=comp.id) }}" class="list-group-item list-group-item-action">
+                    {{ comp.events.title }} ({{ comp.type }}) - Created at {{ comp.created_at }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
-
 {% endblock %}

@@ -3,33 +3,51 @@
 {% block title %}Import Students{% endblock %}
 
 {% block content %}
-<h1 class="mt-5">Import Students</h1>
-<p>Upload a CSV file with the headers: <code>full_name</code>, <code>roll_no</code>, <code>house</code>, <code>email</code> (optional).</p>
-
-<form id="upload-form" class="mt-4">
-    <div class="mb-3">
-        <label for="csv-file" class="form-label">CSV File</label>
-        <input type="file" class="form-control" id="csv-file" name="csv_file" accept=".csv" required>
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Import Students</h1>
+        <p class="lead">Upload a CSV file with the headers: <code>full_name</code>, <code>roll_no</code>, <code>house</code>, <code>email</code> (optional).</p>
     </div>
-    <button type="submit" class="btn btn-primary">
-        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
-        Upload and Preview
-    </button>
-</form>
 
-<hr>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card animated-fade-in">
+                <div class="card-body">
+                    <form id="upload-form">
+                        <div class="mb-3">
+                            <label for="csv-file" class="form-label">CSV File</label>
+                            <input type="file" class="form-control" id="csv-file" name="csv_file" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                            Upload and Preview
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div id="preview-section" style="display: none;">
-    <h2>Preview Import</h2>
-    <p>Review the data below. Invalid rows are highlighted in red. You can choose to ignore them and import the valid rows.</p>
-    <table class="table table-striped">
-        <thead>
-            <tr id="preview-header"></tr>
-        </thead>
-        <tbody id="preview-body">
-        </tbody>
-    </table>
-    <button id="commit-import" class="btn btn-success">Commit Import</button>
+    <div id="preview-section" class="mt-5" style="display: none;">
+        <div class="card animated-fade-in">
+            <div class="card-header">
+                <h2>Preview Import</h2>
+                <p>Review the data below. Invalid rows are highlighted in red. You can choose to ignore them and import the valid rows.</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr id="preview-header"></tr>
+                        </thead>
+                        <tbody id="preview-body">
+                        </tbody>
+                    </table>
+                </div>
+                <button id="commit-import" class="btn btn-success">Commit Import</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

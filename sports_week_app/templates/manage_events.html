@@ -3,65 +3,81 @@
 {% block title %}Manage Events{% endblock %}
 
 {% block content %}
-<div id="alert-container"></div>
+<div class="container py-5">
+    <div id="alert-container"></div>
 
-<h1 class="mt-5">Manage Sports</h1>
-<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addSportModal">Add New Sport</button>
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Sports</h1>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for sport in sports %}
-        <tr>
-            <td>{{ sport.name }}</td>
-            <td>{{ sport.description }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSportModal-{{ sport.id }}">Edit</button>
-                <a href="{{ url_for('delete_sport', sport_id=sport.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="card animated-fade-in mb-5">
+        <div class="card-body">
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addSportModal">Add New Sport</button>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sport in sports %}
+                        <tr>
+                            <td>{{ sport.name }}</td>
+                            <td>{{ sport.description }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSportModal-{{ sport.id }}">Edit</button>
+                                <a href="{{ url_for('delete_sport', sport_id=sport.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-<hr class="my-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Events</h1>
+    </div>
 
-<h1 class="mt-5">Manage Events</h1>
-<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addEventModal">Add New Event</button>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Sport</th>
-            <th>Venue</th>
-            <th>Start Time</th>
-            <th>Scoring Model</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for event in events %}
-        <tr>
-            <td>{{ event.title }}</td>
-            <td>{{ event.sport.name }}</td>
-            <td>{{ event.venue }}</td>
-            <td>{{ event.start_time }}</td>
-            <td>{{ event.scoring_model }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEventModal-{{ event.id }}">Edit</button>
-                <a href="{{ url_for('delete_event', event_id=event.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="card animated-fade-in">
+        <div class="card-body">
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addEventModal">Add New Event</button>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Sport</th>
+                            <th>Venue</th>
+                            <th>Start Time</th>
+                            <th>Scoring Model</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in events %}
+                        <tr>
+                            <td>{{ event.title }}</td>
+                            <td>{{ event.sport.name }}</td>
+                            <td>{{ event.venue }}</td>
+                            <td>{{ event.start_time }}</td>
+                            <td>{{ event.scoring_model }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEventModal-{{ event.id }}">Edit</button>
+                                <a href="{{ url_for('delete_event', event_id=event.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Add Sport Modal -->
 <div class="modal fade" id="addSportModal" tabindex="-1">
@@ -204,7 +220,6 @@
     </div>
 </div>
 {% endfor %}
-
 {% endblock %}
 
 {% block scripts %}

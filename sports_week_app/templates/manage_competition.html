@@ -3,56 +3,71 @@
 {% block title %}Manage Competition{% endblock %}
 
 {% block content %}
-<div id="alert-container"></div>
-<h1 class="mt-5">Manage Competition</h1>
+<div class="container py-5">
+    <div id="alert-container"></div>
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Competition</h1>
+    </div>
 
-{% if competition.type == 'group' %}
-    <p>
-        <strong>Event:</strong> {{ competition.events.title }} |
-        <strong>Houses:</strong> {{ competition.houses[0].name }} vs {{ competition.houses[1].name }}
-    </p>
-{% else %}
-    <p>
-        <strong>Event:</strong> {{ competition.events.title }} |
-        <strong>Type:</strong> Individual Competition
-    </p>
-{% endif %}
+    <div class="card animated-fade-in mb-4">
+        <div class="card-body">
+            {% if competition.type == 'group' %}
+                <p>
+                    <strong>Event:</strong> {{ competition.events.title }} |
+                    <strong>Houses:</strong> {{ competition.houses[0].name }} vs {{ competition.houses[1].name }}
+                </p>
+            {% else %}
+                <p>
+                    <strong>Event:</strong> {{ competition.events.title }} |
+                    <strong>Type:</strong> Individual Competition
+                </p>
+            {% endif %}
+        </div>
+    </div>
 
-<h3 class="mt-4">Rounds</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Round</th>
-            <th>Scores</th>
-            <th>Details</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for round in rounds %}
-        <tr id="round-row-{{ round.id }}">
-            <td>{{ round.round_number }}</td>
-            <td>
-                <ul class="list-unstyled">
-                {% for score in round.scores %}
-                    <li>
-                        <strong>{{ score.houses.name if score.houses else score.students.full_name }}:</strong>
-                        {{ score.points }} points
-                    </li>
-                {% endfor %}
-                </ul>
-            </td>
-            <td>{{ round.details }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editRoundModal-{{ round.id }}">Edit</button>
-                <a href="{{ url_for('delete_competition_round', round_id=round.id) }}" class="btn btn-sm btn-danger delete-round-btn">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoundModal">Add New Round</button>
+    <div class="card animated-fade-in">
+        <div class="card-header">
+            <h3>Rounds</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Round</th>
+                            <th>Scores</th>
+                            <th>Details</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for round in rounds %}
+                        <tr id="round-row-{{ round.id }}">
+                            <td>{{ round.round_number }}</td>
+                            <td>
+                                <ul class="list-unstyled">
+                                {% for score in round.scores %}
+                                    <li>
+                                        <strong>{{ score.houses.name if score.houses else score.students.full_name }}:</strong>
+                                        {{ score.points }} points
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </td>
+                            <td>{{ round.details }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editRoundModal-{{ round.id }}">Edit</button>
+                                <a href="{{ url_for('delete_competition_round', round_id=round.id) }}" class="btn btn-sm btn-danger delete-round-btn">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoundModal">Add New Round</button>
+        </div>
+    </div>
+</div>
 
 <!-- Add Round Modal -->
 <div class="modal fade" id="addRoundModal" tabindex="-1">
@@ -109,7 +124,6 @@
     </div>
 </div>
 {% endfor %}
-
 {% endblock %}
 
 {% block scripts %}

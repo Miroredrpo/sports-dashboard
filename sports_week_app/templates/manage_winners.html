@@ -3,43 +3,52 @@
 {% block title %}Manage Winners{% endblock %}
 
 {% block content %}
-<div id="alert-container"></div>
-<h1 class="mt-5">Manage Winners</h1>
-<p>Declare the final winner for each sport.</p>
+<div class="container py-5">
+    <div id="alert-container"></div>
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Winners</h1>
+        <p class="lead">Declare the final winner for each sport.</p>
+    </div>
 
-<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addWinnerModal">Set Winner</button>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Sport</th>
-            <th>Winner</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for winner in winners %}
-        <tr>
-            <td>{{ winner.sports.name }}</td>
-            <td>
-                {% if winner.houses %}
-                    {{ winner.houses.name }} (Group)
-                {% elif winner.students %}
-                    {{ winner.students.houses.name }} ({{ winner.students.full_name }})
-                {% else %}
-                    N/A
-                {% endif %}
-            </td>
-            <td>{{ winner.status }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editWinnerModal-{{ winner.id }}">Edit</button>
-                <a href="{{ url_for('delete_winner', winner_id=winner.id) }}" class="btn btn-sm btn-danger delete-btn">Remove</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="card animated-fade-in">
+        <div class="card-body">
+            <button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addWinnerModal">Set Winner</button>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sport</th>
+                            <th>Winner</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for winner in winners %}
+                        <tr>
+                            <td>{{ winner.sports.name }}</td>
+                            <td>
+                                {% if winner.houses %}
+                                    {{ winner.houses.name }} (Group)
+                                {% elif winner.students %}
+                                    {{ winner.students.houses.name }} ({{ winner.students.full_name }})
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ winner.status }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editWinnerModal-{{ winner.id }}">Edit</button>
+                                <a href="{{ url_for('delete_winner', winner_id=winner.id) }}" class="btn btn-sm btn-danger delete-btn">Remove</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Add/Edit Winner Modal -->
 <div class="modal fade" id="addWinnerModal" tabindex="-1">

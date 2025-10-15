@@ -3,37 +3,47 @@
 {% block title %}Manage Students{% endblock %}
 
 {% block content %}
-<div id="alert-container"></div>
-<h1 class="mt-5">Manage Students</h1>
-<p>Add, edit, or remove students manually.</p>
+<div class="container py-5">
+    <div id="alert-container"></div>
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Students</h1>
+        <p class="lead">Add, edit, or remove students manually.</p>
+    </div>
 
-<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addStudentModal">Add Student Manually</button>
+    <div class="card animated-fade-in">
+        <div class="card-body">
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addStudentModal">Add Student Manually</button>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Full Name</th>
-            <th>Roll No.</th>
-            <th>House</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for student in students %}
-        <tr id="student-row-{{ student.id }}">
-            <td>{{ student.full_name }}</td>
-            <td>{{ student.roll_no }}</td>
-            <td>{{ student.houses.name }}</td>
-            <td>{{ student.email }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editStudentModal-{{ student.id }}">Edit</button>
-                <a href="{{ url_for('delete_student', student_id=student.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Roll No.</th>
+                            <th>House</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr id="student-row-{{ student.id }}">
+                            <td>{{ student.full_name }}</td>
+                            <td>{{ student.roll_no }}</td>
+                            <td>{{ student.houses.name }}</td>
+                            <td>{{ student.email }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editStudentModal-{{ student.id }}">Edit</button>
+                                <a href="{{ url_for('delete_student', student_id=student.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Add Student Modal -->
 <div class="modal fade" id="addStudentModal" tabindex="-1">

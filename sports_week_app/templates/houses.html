@@ -3,31 +3,45 @@
 {% block title %}Manage Houses{% endblock %}
 
 {% block content %}
-<h1 class="mt-5">Manage Houses</h1>
-<div id="alert-container"></div>
-<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addHouseModal">Add New House</button>
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Manage Houses</h1>
+        <p class="lead">Add, edit, or delete house information.</p>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Color</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="houses-table-body">
-        {% for house in houses %}
-        <tr id="house-row-{{ house.id }}">
-            <td>{{ house.name }}</td>
-            <td style="background-color: {{ house.color }};">{{ house.color }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editHouseModal-{{ house.id }}">Edit</button>
-                <a href="{{ url_for('delete_house', house_id=house.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="card animated-fade-in">
+        <div class="card-body">
+            <div id="alert-container"></div>
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addHouseModal">Add New House</button>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Color</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="houses-table-body">
+                        {% for house in houses %}
+                        <tr id="house-row-{{ house.id }}">
+                            <td>{{ house.name }}</td>
+                            <td>
+                                <div style="width: 100%; height: 25px; background-color: {{ house.color }}; border-radius: 5px;"></div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editHouseModal-{{ house.id }}">Edit</button>
+                                <a href="{{ url_for('delete_house', house_id=house.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Add House Modal -->
 <div class="modal fade" id="addHouseModal" tabindex="-1">
@@ -80,7 +94,6 @@
     </div>
 </div>
 {% endfor %}
-
 {% endblock %}
 
 {% block scripts %}
@@ -113,8 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (result.success) {
             showAlert('Success!', 'success');
-            // For simplicity, we'll reload the page to see the changes.
-            // A more advanced implementation would dynamically update the table.
             setTimeout(() => window.location.reload(), 1000);
         } else {
             showAlert(`Error: ${result.error}`, 'danger');
