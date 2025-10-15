@@ -458,7 +458,7 @@ def create_individual_competition(sport_id):
         supabase.table('competition_students').insert(participants).execute()
 
         supabase.table('audit_log').insert({
-            "action_type": "create_competition", "record_id": competition['id'],
+            "action_type": "create_competition", "table_name": "competitions", "record_id": competition['id'],
             "new_value": {"type": "individual", "event_id": event['id']}, "performed_by": session['user']
         }).execute()
         return redirect(url_for('manage_competition', competition_id=competition['id']))
@@ -500,7 +500,7 @@ def create_group_competition(sport_id):
             {"competition_id": competition['id'], "house_id": house2_id}
         ]).execute()
         supabase.table('audit_log').insert({
-            "action_type": "create_competition", "record_id": competition['id'],
+            "action_type": "create_competition", "table_name": "competitions", "record_id": competition['id'],
             "new_value": {"type": "group", "event_id": event['id']}, "performed_by": session['user']
         }).execute()
         return redirect(url_for('manage_competition', competition_id=competition['id']))
