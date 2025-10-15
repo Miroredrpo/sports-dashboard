@@ -55,7 +55,7 @@
         // Show loader on form submission
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', () => {
-                loader.style.display = 'block';
+                loader.style.display = 'flex';
             });
         });
 
@@ -63,7 +63,7 @@
         document.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', (e) => {
                 if (link.href && link.target !== '_blank') {
-                    loader.style.display = 'block';
+                    loader.style.display = 'flex';
                 }
             });
         });
