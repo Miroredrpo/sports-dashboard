@@ -35,20 +35,22 @@ body {
 }
 
 .btn {
-    border-radius: 20px;
-    padding: 10px 20px;
+    border-radius: 50px;
+    padding: 12px 30px;
+    font-weight: 600;
     transition: all 0.3s ease;
+    border: none;
 }
 
 .btn-primary {
     background-image: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
     color: white;
-    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow-color);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .card {

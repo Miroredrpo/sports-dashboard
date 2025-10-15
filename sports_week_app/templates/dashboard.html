@@ -2,16 +2,70 @@
 
 {% block title %}Dashboard{% endblock %}
 
-{% block content %}
-    <h1 class="mt-5">Dashboard</h1>
-    <p>Welcome to the Sports Week application! View the current standings and data visualizations from the links below.</p>
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    .dashboard-card {
+        transition: all 0.3s ease;
+    }
 
-    <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
-        {% if session['is_admin'] %}
-        <a href="{{ url_for('update_scores_dashboard') }}" class="btn btn-success btn-lg px-4 me-md-2">Update Scores</a>
-        {% endif %}
-        <a href="{{ url_for('leaderboard') }}" class="btn btn-primary btn-lg px-4 me-md-2">View Leaderboard</a>
-        <a href="{{ url_for('graphs') }}" class="btn btn-outline-secondary btn-lg px-4 me-md-2">View Graphs</a>
-        <a href="{{ url_for('winners') }}" class="btn btn-warning btn-lg px-4">Winners</a>
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5 animated-fade-in">
+        <h1 class="display-4">Dashboard</h1>
+        <p class="lead">Welcome to the Sports Week application! Navigate to the different sections below.</p>
     </div>
+
+    <div class="row">
+        {% if session['is_admin'] %}
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-edit fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Update Scores</h5>
+                    <p class="card-text">Manage competitions and update scores.</p>
+                    <a href="{{ url_for('update_scores_dashboard') }}" class="btn btn-primary">Update Scores</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Leaderboard</h5>
+                    <p class="card-text">View the current standings by house.</p>
+                    <a href="{{ url_for('leaderboard') }}" class="btn btn-primary">View Leaderboard</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Graphs</h5>
+                    <p class="card-text">Visualize the competition data.</p>
+                    <a href="{{ url_for('graphs') }}" class="btn btn-primary">View Graphs</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 animated-fade-in">
+            <div class="card h-100 dashboard-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-trophy fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Winners</h5>
+                    <p class="card-text">See the final winners of each event.</p>
+                    <a href="{{ url_for('winners') }}" class="btn btn-primary">View Winners</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
