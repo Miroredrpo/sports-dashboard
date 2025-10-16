@@ -1,0 +1,185 @@
+/*
+================================================
+Neumorphic + Minimal Flat UI - Core Styles
+================================================
+*/
+
+/*
+---------------------------------
+1. Root Variables
+---------------------------------
+*/
+:root {
+    /* Typography */
+    --font-family-sans-serif: 'Inter', sans-serif;
+    --font-weight-bold: 700;
+    --font-weight-black: 900;
+
+    /* Base Palette (Dark Mode Default) */
+    --background-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --shadow-light: rgba(255, 255, 255, 0.05);
+    --shadow-dark: rgba(0, 0, 0, 0.5);
+    --border-color: #2c2c2c;
+
+    /* Accent Colors */
+    --accent-blue: #00aaff;
+    --accent-green: #00ffaa;
+    --accent-red: #ff4757;
+
+    /* Neumorphic Variables */
+    --neumorphic-distance: 8px;
+    --neumorphic-blur: 16px;
+    --neumorphic-border-radius: 20px;
+}
+
+/*
+---------------------------------
+2. Base & Typography
+---------------------------------
+*/
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-family-sans-serif);
+    transition: background-color 0.5s ease, color 0.5s ease;
+    padding-top: 80px; /* Space for the floating navbar */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--font-weight-bold);
+}
+
+/*
+---------------------------------
+3. Neumorphic Elements
+---------------------------------
+*/
+.neumorphic-card {
+    background: var(--background-color);
+    border-radius: var(--neumorphic-border-radius);
+    box-shadow:
+        var(--neumorphic-distance) var(--neumorphic-distance) var(--neumorphic-blur) var(--shadow-dark),
+        calc(-1 * var(--neumorphic-distance)) calc(-1 * var(--neumorphic-distance)) var(--neumorphic-blur) var(--shadow-light);
+    padding: 1.5rem;
+    transition: all 0.3s ease-in-out;
+}
+
+.neumorphic-card:hover {
+    transform: translateY(-5px);
+    box-shadow:
+        calc(var(--neumorphic-distance) * 1.2) calc(var(--neumorphic-distance) * 1.2) calc(var(--neumorphic-blur) * 1.2) var(--shadow-dark),
+        calc(-1 * var(--neumorphic-distance) * 1.2) calc(-1 * var(--neumorphic-distance) * 1.2) calc(var(--neumorphic-blur) * 1.2) var(--shadow-light);
+}
+
+.neumorphic-btn {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 500;
+    box-shadow:
+        4px 4px 8px var(--shadow-dark),
+        -4px -4px 8px var(--shadow-light);
+    transition: all 0.2s ease-in-out;
+}
+
+.neumorphic-btn:hover {
+    color: var(--text-color);
+    transform: translateY(-2px);
+    box-shadow:
+        6px 6px 12px var(--shadow-dark),
+        -6px -6px 12px var(--shadow-light);
+}
+
+.neumorphic-btn:active {
+    box-shadow:
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+    transform: translateY(1px);
+    color: var(--text-color);
+}
+
+.btn-primary-soft { border-color: var(--accent-blue); color: var(--accent-blue); }
+.btn-primary-soft:hover { background-color: rgba(0, 170, 255, 0.1); }
+
+.btn-secondary-soft { border-color: #6c757d; color: #6c757d; }
+.btn-secondary-soft:hover { background-color: rgba(108, 117, 125, 0.1); }
+
+.btn-success-soft { border-color: var(--accent-green); color: var(--accent-green); }
+.btn-success-soft:hover { background-color: rgba(0, 255, 170, 0.1); }
+
+.btn-warning-soft { border-color: var(--accent-red); color: var(--accent-red); }
+.btn-warning-soft:hover { background-color: rgba(255, 71, 87, 0.1); }
+
+/*
+---------------------------------
+4. Glassmorphic Navbar
+---------------------------------
+*/
+.glassmorphic-nav {
+    background: rgba(26, 26, 26, 0.6); /* Semi-transparent background */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For Safari */
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 1rem;
+}
+
+.glassmorphic-nav .navbar-brand,
+.glassmorphic-nav .nav-link {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.glassmorphic-nav .nav-link:hover {
+    color: var(--accent-blue);
+}
+
+.notification-dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent-red);
+    border-radius: 50%;
+    border: 2px solid var(--background-color);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(255, 71, 87, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+    }
+}
+
+
+/*
+---------------------------------
+5. Animations
+---------------------------------
+*/
+.card-slide-in {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideIn 0.6s forwards ease-out;
+    animation-delay: var(--delay, 0ms);
+}
+
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

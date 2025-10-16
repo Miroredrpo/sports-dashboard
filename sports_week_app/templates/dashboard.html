@@ -1,19 +1,108 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Home Dashboard{% endblock %}
 
 {% block content %}
-    <div class="dashboard-greeting mt-5">
-        <h1 class="display-5 fw-bold">Hi there, {{ session.user_email | default('User', true) }} 👋</h1>
-        <p class="text-muted">Welcome to the Sports Week application! View the current standings and data visualizations from the links below.</p>
-    </div>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Main Content Column (2/3) -->
+        <div class="col-lg-8">
+            <div class="dashboard-greeting mb-4">
+                <h1 class="display-5 fw-bold">Hi there, {{ session.user_email | default('User', true) }} 👋</h1>
+                <p class="text-muted">Welcome back! Here's what's happening.</p>
+            </div>
 
-    <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
-        {% if session['is_admin'] %}
-        <a href="{{ url_for('update_scores_dashboard') }}" class="btn btn-success btn-lg px-4 me-md-2">Update Scores</a>
-        {% endif %}
-        <a href="{{ url_for('leaderboard') }}" class="btn btn-primary btn-lg px-4 me-md-2">View Leaderboard</a>
-        <a href="{{ url_for('graphs') }}" class="btn btn-outline-secondary btn-lg px-4 me-md-2">View Graphs</a>
-        <a href="{{ url_for('winners') }}" class="btn btn-warning btn-lg px-4">Winners</a>
+            <!-- Quick Actions -->
+            <div class="mb-4">
+                <h4 class="mb-3">Quick Actions</h4>
+                <div class="d-flex flex-wrap gap-3">
+                    {% if session['is_admin'] %}
+                    <a href="{{ url_for('update_scores_dashboard') }}" class="btn neumorphic-btn btn-success-soft"><i class="bi bi-pencil-square"></i> Update Scores</a>
+                    {% endif %}
+                    <a href="{{ url_for('leaderboard') }}" class="btn neumorphic-btn btn-primary-soft"><i class="bi bi-bar-chart-line"></i> View Leaderboard</a>
+                    <a href="{{ url_for('graphs') }}" class="btn neumorphic-btn btn-secondary-soft"><i class="bi bi-pie-chart"></i> View Graphs</a>
+                    <a href="{{ url_for('winners') }}" class="btn neumorphic-btn btn-warning-soft"><i class="bi bi-trophy"></i> Winners</a>
+                </div>
+            </div>
+
+            <!-- This is where the 'Graphs' and other components will be added -->
+            <div id="dashboard-graphs-container">
+                {% include 'includes/dashboard_graphs.html' %}
+            </div>
+
+        </div>
+
+        <!-- Right Sidebar Column (1/3) -->
+        <div class="col-lg-4">
+
+            <!-- This is where the 'Winners Preview' will be added -->
+            <div id="winners-preview-container">
+                {% include 'includes/winners_preview.html' %}
+            </div>
+
+        </div>
     </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Staggered card animation
+    const cards = document.querySelectorAll('.card-slide-in');
+    cards.forEach((card, index) => {
+        card.style.setProperty('--delay', `${index * 150}ms`);
+    });
+
+    // Chart.js implementation
+    const chartData = {{ chart_data|tojson }};
+    const ctx = document.getElementById('dashboardChart');
+
+    if (ctx && chartData.length > 0) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.map(d => d.name),
+                datasets: [{
+                    label: 'Total Points',
+                    data: chartData.map(d => d.points),
+                    backgroundColor: chartData.map(d => d.color || 'rgba(0, 170, 255, 0.7)'),
+                    borderColor: 'rgba(0, 0, 0, 0)',
+                    borderWidth: 1,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
