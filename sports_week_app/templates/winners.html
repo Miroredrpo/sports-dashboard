@@ -4,97 +4,52 @@
 
 {% block head %}
 <style>
-    .confetti-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        overflow: hidden;
-        z-index: 9999;
+    .winner-item {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 0;
     }
-    .confetti {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background-color: #f00;
-        opacity: 0.7;
-        animation: confetti-fall 5s linear infinite;
-    }
-    @keyframes confetti-fall {
-        0% { transform: translateY(-100px) rotateZ(0deg); }
-        100% { transform: translateY(100vh) rotateZ(720deg); }
+    .winner-item:last-child {
+        border-bottom: none;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="confetti-container" id="confetti-container"></div>
-<h1 class="mt-5 text-center">🏆 Winners Circle 🏆</h1>
-<p class="text-center">Celebrate the champions of our Sports Week!</p>
+<div class="container mt-5">
+    <div class="neumorphic-card">
+        <h1 class="mb-4 text-center">🏆 Winners Page 🏆</h1>
 
-<div class="my-4">
-    <label for="sport-select" class="form-label">Select a Sport to View the Winner:</label>
-    <select id="sport-select" class="form-select">
-        <option selected>-- Choose a Sport --</option>
-        {% for winner in winners %}
-        <option value="{{ winner.id }}">{{ winner.sports.name }}</option>
-        {% endfor %}
-    </select>
+        <p class="text-center text-muted mb-4">
+            Note: This page shows the final declared winner for each sport. For a full points breakdown, please see the <a href="{{ url_for('leaderboard') }}">Leaderboard</a>.
+        </p>
+
+        {% if winners|length > 0 %}
+            <div class="list-group list-group-flush">
+                {% for winner in winners %}
+                    <div class="list-group-item bg-transparent winner-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ winner.sports.name }}</h5>
+                            <small>{{ winner.status | capitalize }}</small>
+                        </div>
+                        <p class="mb-1">
+                            {% if winner.houses and winner.students %}
+                                <strong>{{ winner.houses.name }}</strong> ({{ winner.students.full_name }})
+                            {% elif winner.houses %}
+                                <strong>{{ winner.houses.name }}</strong>
+                            {% elif winner.students %}
+                                <strong>{{ winner.students.full_name }}</strong>
+                            {% else %}
+                                <span class="text-muted">Winner not yet assigned</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center p-5">
+                <p>No winners have been announced yet. Check back soon!</p>
+            </div>
+        {% endif %}
+    </div>
 </div>
-
-<div id="winner-display" class="text-center" style="display: none;">
-    <h2 id="sport-name"></h2>
-    <div id="winner-details"></div>
-</div>
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-    const winnersData = {{ winners|tojson }};
-    const sportSelect = document.getElementById('sport-select');
-    const winnerDisplay = document.getElementById('winner-display');
-    const sportNameEl = document.getElementById('sport-name');
-    const winnerDetailsEl = document.getElementById('winner-details');
-    const confettiContainer = document.getElementById('confetti-container');
-
-    sportSelect.addEventListener('change', function() {
-        const selectedId = parseInt(this.value);
-        const winner = winnersData.find(w => w.id === selectedId);
-
-        winnerDisplay.style.display = 'none';
-        confettiContainer.innerHTML = '';
-        winnerDetailsEl.innerHTML = '';
-
-        if (winner) {
-            sportNameEl.textContent = winner.sports.name;
-            if (winner.status === 'announced') {
-                if (winner.houses) {
-                    winnerDetailsEl.innerHTML = `<h3 class="display-4">🎉 ${winner.houses.name} 🎉</h3><p class="text-muted">Group Winner</p>`;
-                    triggerConfetti();
-                }
-                if (winner.students) {
-                    winnerDetailsEl.innerHTML += `<h4 class="mt-4">${winner.students.houses.name} (${winner.students.full_name})</h4><p class="text-muted">Individual Winner</p>`;
-                    triggerConfetti();
-                }
-            } else {
-                winnerDetailsEl.innerHTML = `<p class="text-muted">${winner.status.replace(/_/g, ' ')}</p>`;
-            }
-            winnerDisplay.style.display = 'block';
-        }
-    });
-
-    function triggerConfetti() {
-        for (let i = 0; i < 100; i++) {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.animationDelay = Math.random() * 5 + 's';
-            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
-            confettiContainer.appendChild(confetti);
-        }
-    }
-</script>
 {% endblock %}

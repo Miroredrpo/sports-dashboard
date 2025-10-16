@@ -2,53 +2,83 @@
 
 {% block title %}Login{% endblock %}
 
-{% block content %}
-<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header">
-                        <strong class="me-auto">Notification</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">
-                        {{ message }}
-                    </div>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
+{% block head %}
+<style>
+    html, body { height: 100%; }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 0; /* Override base padding */
+    }
+    .split-container {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+    .split-image {
+        flex: 1;
+        background: url('https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2070&auto=format&fit=crop') no-repeat center center;
+        background-size: cover;
+    }
+    .split-form {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    .form-container {
+        width: 100%;
+        max-width: 400px;
+    }
+    .form-control {
+        background-color: var(--background-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+</style>
+{% endblock %}
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <h1 class="mt-5">Login</h1>
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
-        <form method="POST" class="mt-4">
-            <div class="mb-3">
-                <label for="school_level" class="form-label">Select Your School</label>
-                <select class="form-select" name="school_level" required>
-                    <option value="high_school">High School</option>
-                    <option value="middle_school">Middle School</option>
-                    <option value="elementary">Elementary School</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="email" class="form-label">Email address</label>
-                <input type="email" class="form-control" id="email" name="email" required>
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p class="mt-3">
-            Don't have an account? <a href="{{ url_for('signup') }}">Sign up here</a>.
-        </p>
+{% block content %}
+<div class="split-container">
+    <div class="split-image"></div>
+    <div class="split-form">
+        <div class="form-container neumorphic-card">
+            <h2 class="text-center mb-4">Login</h2>
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                 <div class="mb-3">
+                    <label for="school_level" class="form-label">School Level</label>
+                    <select class="form-select form-control" id="school_level" name="school_level" required>
+                        <option value="high_school">High School</option>
+                        <option value="middle_school">Middle School</option>
+                        <option value="elementary">Elementary</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn neumorphic-btn w-100">Login</button>
+            </form>
+            <p class="mt-3 text-center">
+                Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a>
+            </p>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -56,6 +56,37 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def get_dashboard_data(school_level):
+    """Fetches and processes all data needed for the dashboard."""
+    try:
+        # Fetch house points for the chart
+        scores_query = supabase.table('scores').select('points, house_id, student_id, competition_rounds!inner(competitions!inner(events!inner(sport_id)))').eq('competition_rounds.competitions.events.school_level', school_level)
+        scores = scores_query.execute().data
+
+        all_houses = {h['id']: h for h in supabase.table('houses').select('id, name, color').eq('school_level', school_level).execute().data}
+        all_students = {s['id']: s for s in supabase.table('students').select('id, house_id').eq('school_level', school_level).execute().data}
+        house_points = {h['name']: {'points': 0, 'color': h['color'], 'name': h['name']} for h in all_houses.values()}
+
+        for score in scores:
+            house_id = score.get('house_id') or (all_students.get(score['student_id']) or {}).get('house_id')
+            if house_id and house_id in all_houses:
+                house_points[all_houses[house_id]['name']]['points'] += score['points']
+
+        chart_data = sorted(house_points.values(), key=lambda x: x['points'], reverse=True)
+
+        # Fetch recent winners for the preview component
+        winners_data = supabase.table('winners').select('*, sports!inner(name), houses!left(name), students!left(full_name)') \
+            .eq('school_level', school_level) \
+            .order('created_at', desc=True) \
+            .limit(5) \
+            .execute().data
+
+        return chart_data, winners_data
+
+    except Exception as e:
+        print(f"Error fetching dashboard data: {e}")
+        return [], [] # Fail gracefully
+
 # --- Routes ---
 @app.route("/")
 def index():
@@ -100,34 +131,7 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    try:
-        # Replicate the logic from /api/leaderboard to get overall house points
-        scores_query = supabase.table('scores').select('points, house_id, student_id, competition_rounds!inner(competitions!inner(events!inner(sport_id)))').eq('competition_rounds.competitions.events.school_level', get_school_level())
-        scores = scores_query.execute().data
-
-        all_houses = {h['id']: h for h in supabase.table('houses').select('id, name, color').eq('school_level', get_school_level()).execute().data}
-        all_students = {s['id']: s for s in supabase.table('students').select('id, house_id').eq('school_level', get_school_level()).execute().data}
-        house_points = {h['name']: {'points': 0, 'color': h['color'], 'name': h['name']} for h in all_houses.values()}
-
-        for score in scores:
-            house_id = score.get('house_id') or (all_students.get(score['student_id']) or {}).get('house_id')
-            if house_id and house_id in all_houses:
-                house_points[all_houses[house_id]['name']]['points'] += score['points']
-
-        chart_data = sorted(house_points.values(), key=lambda x: x['points'], reverse=True)
-
-        # Fetch recent winners for the preview component
-        winners_data = supabase.table('winners').select('*, sports!inner(name), houses!left(name), students!left(full_name)') \
-            .eq('school_level', get_school_level()) \
-            .order('created_at', desc=True) \
-            .limit(5) \
-            .execute().data
-
-    except Exception as e:
-        print(f"Error fetching dashboard data: {e}")
-        chart_data = [] # Fail gracefully
-        winners_data = []
-
+    chart_data, winners_data = get_dashboard_data(get_school_level())
     return render_template("dashboard.html", chart_data=chart_data, winners=winners_data)
 
 @app.route("/admin")

@@ -2,109 +2,105 @@
 
 {% block title %}Leaderboard{% endblock %}
 
+{% block head %}
+<style>
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s ease;
+    }
+    .leaderboard-item:last-child {
+        border-bottom: none;
+    }
+    .leaderboard-item:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+    .rank {
+        font-size: 1.5rem;
+        font-weight: var(--font-weight-black);
+        width: 50px;
+        text-align: center;
+    }
+    .house-color {
+        width: 10px;
+        height: 40px;
+        margin-right: 1rem;
+        border-radius: 5px;
+    }
+    .house-name {
+        flex-grow: 1;
+        font-size: 1.2rem;
+    }
+    .points {
+        font-size: 1.5rem;
+        font-weight: var(--font-weight-bold);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h1 class="mt-5">Leaderboard</h1>
+<div class="container mt-5">
+    <div class="neumorphic-card">
+        <h1 class="mb-4 text-center">Leaderboard</h1>
+        <div class="d-flex justify-content-center mb-4">
+            <select id="sport-filter" class="form-select form-control" style="max-width: 300px;">
+                <option value="all">All Sports</option>
+                {% for sport in sports %}
+                    <option value="{{ sport.id }}">{{ sport.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-<div class="my-3">
-    <label for="sport-filter" class="form-label">Filter by Sport:</label>
-    <select id="sport-filter" class="form-select">
-        <option value="all" selected>All Sports</option>
-        {% for sport in sports %}
-        <option value="{{ sport.id }}">{{ sport.name }}</option>
-        {% endfor %}
-    </select>
-</div>
-
-<div class="row">
-    <div class="col-md-8">
-        <canvas id="leaderboardChart"></canvas>
+        <div id="leaderboard-content">
+            <!-- Leaderboard items will be injected here by JavaScript -->
+        </div>
+         <p class="text-center text-muted mt-4">
+            Note: Points are cumulative. For final results, please visit the <a href="{{ url_for('winners') }}">Winners Page</a>.
+        </p>
     </div>
-    <div class="col-md-4">
-        <h3>Current Standings</h3>
-        <table class="table" id="leaderboard-table">
-            <thead>
-                <tr>
-                    <th>House</th>
-                    <th>Points</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="mt-4 text-center text-muted">
-    <small>This is the total points accumulated by each house and may or may not represent the final winner. To view the finale results, visit the Winners Page.</small>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sportFilter = document.getElementById('sport-filter');
-    let leaderboardChart;
+    document.addEventListener('DOMContentLoaded', function() {
+        const filter = document.getElementById('sport-filter');
+        const content = document.getElementById('leaderboard-content');
 
-    async function fetchAndRenderLeaderboard(sportId) {
-        localStorage.setItem('leaderboard_sport_filter', sportId); // Save filter state
-        const response = await fetch(`/api/leaderboard?sport_id=${sportId}`);
-        const data = await response.json();
-        renderLeaderboard(data);
-    }
-
-    function renderLeaderboard(data) {
-        if (leaderboardChart) {
-            leaderboardChart.destroy();
-        }
-        const tableBody = document.querySelector('#leaderboard-table tbody');
-        tableBody.innerHTML = '';
-
-        const labels = [];
-        const points = [];
-        const colors = [];
-
-        data.forEach(house => {
-            labels.push(house.name);
-            points.push(house.points);
-            colors.push(house.color);
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${house.name}</td><td>${house.points}</td>`;
-            tableBody.appendChild(tr);
-        });
-
-        const ctx = document.getElementById('leaderboardChart').getContext('2d');
-        leaderboardChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Total Points',
-                    data: points,
-                    backgroundColor: colors,
-                    borderColor: colors,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
+        function fetchLeaderboard(sportId = 'all') {
+            content.innerHTML = '<div class="text-center p-5">Loading...</div>';
+            fetch(`/api/leaderboard?sport_id=${sportId}`)
+                .then(response => response.json())
+                .then(data => {
+                    content.innerHTML = '';
+                    if (data.length === 0) {
+                        content.innerHTML = '<div class="text-center p-5">No data available.</div>';
+                        return;
                     }
-                }
-            }
+                    data.forEach((item, index) => {
+                        const rank = index + 1;
+                        const houseColor = item.color || '#333';
+                        const leaderboardItem = `
+                            <div class="leaderboard-item">
+                                <div class="rank">#${rank}</div>
+                                <div class="house-color" style="background-color: ${houseColor};"></div>
+                                <div class="house-name">${item.name}</div>
+                                <div class="points">${item.points} pts</div>
+                            </div>
+                        `;
+                        content.insertAdjacentHTML('beforeend', leaderboardItem);
+                    });
+                });
+        }
+
+        filter.addEventListener('change', () => {
+            fetchLeaderboard(filter.value);
         });
-    }
 
-    sportFilter.addEventListener('change', function() {
-        fetchAndRenderLeaderboard(this.value);
+        // Initial load
+        fetchLeaderboard();
     });
-
-    // Initial load, applying saved filter
-    const savedFilter = localStorage.getItem('leaderboard_sport_filter') || 'all';
-    sportFilter.value = savedFilter;
-    fetchAndRenderLeaderboard(savedFilter);
-});
 </script>
 {% endblock %}
