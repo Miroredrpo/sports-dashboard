@@ -137,6 +137,22 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--accent-blue);
 }
 
+.animated-brand-text {
+    font-weight: var(--font-weight-black);
+    font-size: 1.5rem;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green), var(--accent-red), var(--accent-blue));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-animation 4s ease infinite;
+}
+
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 .notification-dot {
     position: absolute;
     top: 10px;
