@@ -83,6 +83,7 @@ def login():
         try:
             user_session = supabase.auth.sign_in_with_password({"email": email, "password": password})
             session['user'] = user_session.user.id
+            session['user_email'] = user_session.user.email
             session['is_admin'] = is_admin(user_session.user.id)
             session['is_teacher'] = is_teacher(user_session.user.id)
             session['school_level'] = school_level

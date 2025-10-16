@@ -3,8 +3,10 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-    <h1 class="mt-5">Dashboard</h1>
-    <p>Welcome to the Sports Week application! View the current standings and data visualizations from the links below.</p>
+    <div class="dashboard-greeting mt-5">
+        <h1 class="display-5 fw-bold">Hi there, {{ session.user_email | default('User', true) }} 👋</h1>
+        <p class="text-muted">Welcome to the Sports Week application! View the current standings and data visualizations from the links below.</p>
+    </div>
 
     <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
         {% if session['is_admin'] %}
