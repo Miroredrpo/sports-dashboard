@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Winners{% endblock %}
+
+{% block content %}
+<div id="alert-container"></div>
+<h1 class="mt-5">Manage Winners</h1>
+<p>Declare the final winner for each sport.</p>
+
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addWinnerModal">Set Winner</button>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Sport</th>
+            <th>Winner</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for winner in winners %}
+        <tr>
+            <td>{{ winner.sports.name }}</td>
+            <td>
+                {% if winner.houses %}
+                    {{ winner.houses.name }} (Group)
+                {% elif winner.students %}
+                    {{ winner.students.houses.name }} ({{ winner.students.full_name }})
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>{{ winner.status }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editWinnerModal-{{ winner.id }}">Edit</button>
+                <a href="{{ url_for('delete_winner', winner_id=winner.id) }}" class="btn btn-sm btn-danger delete-btn">Remove</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add/Edit Winner Modal -->
+<div class="modal fade" id="addWinnerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set a Winner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_winner') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}">{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Group (House) Winner</label>
+                        <select class="form-select" name="house_id">
+                            <option value="">-- Select a House --</option>
+                            {% for house in houses %}
+                            <option value="{{ house.id }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Individual Winner</label>
+                        <select class="form-select" name="student_id">
+                            <option value="">-- Select a Student --</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status" required>
+                            <option value="announced">Announced</option>
+                            <option value="coming_soon">Coming Soon</option>
+                            <option value="not_yet_done">Not Yet Done</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for winner in winners %}
+<div class="modal fade" id="editWinnerModal-{{ winner.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Winner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_winner', winner_id=winner.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Group (House) Winner</label>
+                        <select class="form-select" name="house_id">
+                            <option value="">-- Select a House --</option>
+                            {% for house in houses %}
+                            <option value="{{ house.id }}" {% if winner.house_id == house.id %}selected{% endif %}>{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Individual Winner</label>
+                        <select class="form-select" name="student_id">
+                            <option value="">-- Select a Student --</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}" {% if winner.student_id == student.id %}selected{% endif %}>{{ student.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status" required>
+                            <option value="announced" {% if winner.status == 'announced' %}selected{% endif %}>Announced</option>
+                            <option value="coming_soon" {% if winner.status == 'coming_soon' %}selected{% endif %}>Coming Soon</option>
+                            <option value="not_yet_done" {% if winner.status == 'not_yet_done' %}selected{% endif %}>Not Yet Done</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Generic AJAX form submission and delete handling
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('An error occurred.');
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to remove this winner entry?')) {
+                const response = await fetch(e.target.href, { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('An error occurred during deletion.');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

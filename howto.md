@@ -23,6 +23,7 @@ Follow these steps to get the application running on your local machine.
 2.  **Run the Database Schema:**
     *   In your Supabase project, navigate to the **SQL Editor**.
     *   Open the `sports_week_app/sql/schema.sql` file from this repository, copy its content, paste it into the SQL editor, and click **Run**. This will create all the necessary tables.
+    *   **IMPORTANT:** After creating the tables, open and run the `sports_week_app/sql/functions.sql` file in the SQL editor. This is required for the application to work correctly.
     *   (Optional) You can also run the `sports_week_app/sql/seed.sql` to pre-populate the four houses.
 
 3.  **Configure Environment Variables:**

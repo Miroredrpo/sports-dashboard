@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Events{% endblock %}
+
+{% block content %}
+<div id="alert-container"></div>
+
+<h1 class="mt-5">Manage Sports</h1>
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addSportModal">Add New Sport</button>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sport in sports %}
+        <tr>
+            <td>{{ sport.name }}</td>
+            <td>{{ sport.description }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSportModal-{{ sport.id }}">Edit</button>
+                <a href="{{ url_for('delete_sport', sport_id=sport.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr class="my-5">
+
+<h1 class="mt-5">Manage Events</h1>
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#addEventModal">Add New Event</button>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Sport</th>
+            <th>Venue</th>
+            <th>Start Time</th>
+            <th>Scoring Model</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in events %}
+        <tr>
+            <td>{{ event.title }}</td>
+            <td>{{ event.sport.name }}</td>
+            <td>{{ event.venue }}</td>
+            <td>{{ event.start_time }}</td>
+            <td>{{ event.scoring_model }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEventModal-{{ event.id }}">Edit</button>
+                <a href="{{ url_for('delete_event', event_id=event.id) }}" class="btn btn-sm btn-danger delete-btn">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add Sport Modal -->
+<div class="modal fade" id="addSportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Sport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_sport') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sport Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_event') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Event Title</label>
+                        <input type="text" class="form-control" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}">{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Venue</label>
+                        <input type="text" class="form-control" name="venue">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Time (Optional)</label>
+                        <input type="datetime-local" class="form-control" name="start_time">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scoring Model</label>
+                        <select class="form-select" name="scoring_model" required>
+                            <option value="points">Points-based</option>
+                            <option value="victory">Straight Victory</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Sport Modal -->
+{% for sport in sports %}
+<div class="modal fade" id="editSportModal-{{ sport.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Sport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_sport', sport_id=sport.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sport Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ sport.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description">{{ sport.description }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Edit Event Modal -->
+{% for event in events %}
+<div class="modal fade" id="editEventModal-{{ event.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_event', event_id=event.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Event Title</label>
+                        <input type="text" class="form-control" name="title" value="{{ event.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sport</label>
+                        <select class="form-select" name="sport_id" required>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}" {% if sport.id == event.sport_id %}selected{% endif %}>{{ sport.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Venue</label>
+                        <input type="text" class="form-control" name="venue" value="{{ event.venue }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" name="start_time" value="{{ event.start_time }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scoring Model</label>
+                        <select class="form-select" name="scoring_model" required>
+                            <option value="points" {% if event.scoring_model == 'points' %}selected{% endif %}>Points-based</option>
+                            <option value="victory" {% if event.scoring_model == 'victory' %}selected{% endif %}>Straight Victory</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loader = document.getElementById('loader');
+
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            loader.style.display = 'block';
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to delete this item?')) {
+                loader.style.display = 'block';
+                try {
+                    const response = await fetch(e.target.href, {
+                        method: 'POST'
+                    });
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('An error occurred during deletion.');
+                    }
+                } finally {
+                    loader.style.display = 'none';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
